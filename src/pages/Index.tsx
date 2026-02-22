@@ -67,7 +67,7 @@ const Dashboard = () => {
   const quranPercent = Math.round((stats.memorisedAyahs / stats.totalAyahs) * 100);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-bold">Assalamu Alaikum</h1>
         <p className="text-muted-foreground">Your deen journey at a glance</p>
