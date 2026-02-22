@@ -62,6 +62,30 @@ const Settings = () => {
 
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteAccount = async () => {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to delete account");
+      await supabase.auth.signOut();
+      toast({ title: "Account deleted", description: "Your account and all data have been permanently removed." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Load profile
   useEffect(() => {
@@ -374,9 +398,39 @@ const Settings = () => {
             <p className="text-xs text-muted-foreground mb-3">
               Permanently delete your account and all associated data. This cannot be undone.
             </p>
-            <p className="text-xs text-muted-foreground mb-2">
-              To delete your account, please contact support or use the Supabase dashboard.
-            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" /> Delete My Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete your account, all your tracked data (Quran progress, fasting logs, time logs, books, dhikr, goals, chat history), and cannot be undone.
+                    <br /><br />
+                    Type <strong>DELETE</strong> to confirm.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  value={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                  placeholder='Type "DELETE" to confirm'
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setDeleteConfirm("")}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={deleteConfirm !== "DELETE" || deleting}
+                    onClick={deleteAccount}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                    Permanently Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
