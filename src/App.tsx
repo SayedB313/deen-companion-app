@@ -14,6 +14,8 @@ import Fasting from "./pages/Fasting";
 import TimeTracker from "./pages/TimeTracker";
 import Character from "./pages/Character";
 import Coach from "./pages/Coach";
+import Dhikr from "./pages/Dhikr";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +51,8 @@ const App = () => (
               <Route path="/time" element={<ProtectedRoute><TimeTracker /></ProtectedRoute>} />
               <Route path="/character" element={<ProtectedRoute><Character /></ProtectedRoute>} />
               <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
+              <Route path="/dhikr" element={<ProtectedRoute><Dhikr /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

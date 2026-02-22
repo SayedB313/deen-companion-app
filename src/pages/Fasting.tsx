@@ -23,6 +23,22 @@ const Fasting = () => {
   const [fasts, setFasts] = useState<any[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedType, setSelectedType] = useState("voluntary");
+  const [hijriDate, setHijriDate] = useState("");
+
+  useEffect(() => {
+    const fetchHijri = async () => {
+      try {
+        const today = new Date();
+        const res = await fetch(
+          `https://api.aladhan.com/v1/gpiToH/${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`
+        );
+        const json = await res.json();
+        const h = json.data.hijri;
+        setHijriDate(`${h.day} ${h.month.en} ${h.year} AH`);
+      } catch {}
+    };
+    fetchHijri();
+  }, []);
 
   const load = async () => {
     if (!user) return;
@@ -64,9 +80,12 @@ const Fasting = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Fasting Tracker</h1>
-        <p className="text-muted-foreground">{fasts.length} total days fasted</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Fasting Tracker</h1>
+          <p className="text-muted-foreground">{fasts.length} total days fasted</p>
+        </div>
+        {hijriDate && <Badge variant="secondary" className="text-sm">{hijriDate}</Badge>}
       </div>
 
       <div className="flex items-center gap-3">
