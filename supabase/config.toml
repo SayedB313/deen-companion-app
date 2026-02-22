@@ -2,3 +2,6 @@ project_id = "dtbiuqchjladvnnaymit"
 
 [functions.deen-coach]
 verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
