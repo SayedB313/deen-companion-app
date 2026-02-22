@@ -1,0 +1,109 @@
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Hand,
+  MessageCircle,
+  MoreHorizontal,
+  GraduationCap,
+  UtensilsCrossed,
+  Clock,
+  Heart,
+  Settings,
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+
+const primaryTabs = [
+  { label: "Home", icon: LayoutDashboard, path: "/" },
+  { label: "Qur'an", icon: BookOpen, path: "/quran" },
+  { label: "Dhikr", icon: Hand, path: "/dhikr" },
+  { label: "Coach", icon: MessageCircle, path: "/coach" },
+];
+
+const moreTabs = [
+  { label: "Knowledge", icon: GraduationCap, path: "/knowledge" },
+  { label: "Fasting", icon: UtensilsCrossed, path: "/fasting" },
+  { label: "Time Tracker", icon: Clock, path: "/time" },
+  { label: "Character", icon: Heart, path: "/character" },
+  { label: "Settings", icon: Settings, path: "/settings" },
+];
+
+export function MobileBottomNav() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const isActive = (path: string) =>
+    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+
+  const isMoreActive = moreTabs.some((t) => isActive(t.path));
+
+  return (
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+        <div className="flex items-center justify-around h-16 px-1 safe-area-pb">
+          {primaryTabs.map((tab) => {
+            const active = isActive(tab.path);
+            return (
+              <button
+                key={tab.path}
+                onClick={() => navigate(tab.path)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[44px] transition-colors",
+                  active ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <tab.icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setMoreOpen(true)}
+            className={cn(
+              "flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[44px] transition-colors",
+              isMoreActive ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            <span className="text-[10px] font-medium">More</span>
+          </button>
+        </div>
+      </nav>
+
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+          <SheetHeader>
+            <SheetTitle>More</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-3 gap-4 pt-4">
+            {moreTabs.map((tab) => {
+              const active = isActive(tab.path);
+              return (
+                <button
+                  key={tab.path}
+                  onClick={() => {
+                    navigate(tab.path);
+                    setMoreOpen(false);
+                  }}
+                  className={cn(
+                    "flex flex-col items-center gap-2 rounded-xl p-4 transition-colors min-h-[80px]",
+                    active
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  )}
+                >
+                  <tab.icon className="h-6 w-6" />
+                  <span className="text-xs font-medium">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}

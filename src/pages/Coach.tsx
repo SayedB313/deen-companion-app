@@ -124,7 +124,7 @@ const Coach = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] max-md:h-[calc(100vh-10rem)]">
       <div className="mb-4">
         <h1 className="text-2xl font-bold">AI Coach</h1>
         <p className="text-muted-foreground">Your personal deen companion</p>
