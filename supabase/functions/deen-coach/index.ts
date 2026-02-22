@@ -121,7 +121,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    const { messages, pageContext } = await req.json();
     const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
 
@@ -162,6 +162,7 @@ You can help with:
 - Character development and self-accountability
 - General Islamic knowledge questions
 
+${pageContext ? `\nThe user is currently viewing their **${pageContext}** page. Prioritise advice and discussion related to this area when relevant, but still answer any question they ask.\n` : ""}
 ${dataSummary ? `IMPORTANT — Below is the user's REAL tracked data from the app. Use this to give PERSONALIZED advice, celebrate their achievements, identify areas for improvement, and reference specific numbers/progress. Always acknowledge their actual data when relevant:
 
 ${dataSummary}` : "The user has not tracked any data yet. Encourage them to start using the app's features (Quran tracker, fasting log, time tracker, character log, books, courses)."}`;
