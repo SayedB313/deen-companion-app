@@ -163,7 +163,7 @@ const Dhikr = () => {
                 <Progress value={pct} className="h-2" />
                 <div className="flex gap-2">
                   <Button
-                    className="flex-1 h-14 text-lg"
+                    className="flex-1 h-14 md:h-14 max-md:h-16 text-lg max-md:text-xl"
                     variant={done ? "secondary" : "default"}
                     onClick={() => tap(dhikr.type, target)}
                   >
@@ -172,7 +172,7 @@ const Dhikr = () => {
                   <Button
                     size="icon"
                     variant="outline"
-                    className="h-14 w-14"
+                    className="h-14 w-14 md:h-14 md:w-14 max-md:h-16 max-md:w-16"
                     onClick={() => reset(dhikr.type, target)}
                   >
                     <RotateCcw className="h-4 w-4" />

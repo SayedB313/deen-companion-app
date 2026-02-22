@@ -112,3 +112,8 @@
     font-family: 'Amiri', serif;
   }
 }
+
+/* Safe area for bottom nav on notched devices */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
