@@ -72,15 +72,15 @@ const DashboardCharts = () => {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Weekly Deen Time</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2 sm:p-6 pt-0 sm:pt-0">
           <ChartContainer config={deenChartConfig} className="h-[200px] w-full">
             <BarChart data={deenTimeData} accessibilityLayer>
-              <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
-              <YAxis tickLine={false} axisLine={false} fontSize={12} width={30} />
+              <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} />
+              <YAxis tickLine={false} axisLine={false} fontSize={11} width={25} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="deen" fill="var(--color-deen)" radius={[4, 4, 0, 0]} />
               <Bar dataKey="other" fill="var(--color-other)" radius={[4, 4, 0, 0]} />
@@ -89,15 +89,15 @@ const DashboardCharts = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Fasting</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2 sm:p-6 pt-0 sm:pt-0">
           <ChartContainer config={fastingChartConfig} className="h-[200px] w-full">
             <LineChart data={fastingData} accessibilityLayer>
-              <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12} />
-              <YAxis tickLine={false} axisLine={false} fontSize={12} width={30} />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={11} />
+              <YAxis tickLine={false} axisLine={false} fontSize={11} width={25} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Line type="monotone" dataKey="count" stroke="var(--color-count)" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>

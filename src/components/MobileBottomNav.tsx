@@ -1,35 +1,9 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  BookOpen,
-  Hand,
-  MessageCircle,
-  MoreHorizontal,
-  GraduationCap,
-  UtensilsCrossed,
-  Clock,
-  Heart,
-  Settings,
-  X,
-} from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-
-const primaryTabs = [
-  { label: "Home", icon: LayoutDashboard, path: "/" },
-  { label: "Qur'an", icon: BookOpen, path: "/quran" },
-  { label: "Dhikr", icon: Hand, path: "/dhikr" },
-  { label: "Coach", icon: MessageCircle, path: "/coach" },
-];
-
-const moreTabs = [
-  { label: "Knowledge", icon: GraduationCap, path: "/knowledge" },
-  { label: "Fasting", icon: UtensilsCrossed, path: "/fasting" },
-  { label: "Time Tracker", icon: Clock, path: "/time" },
-  { label: "Character", icon: Heart, path: "/character" },
-  { label: "Settings", icon: Settings, path: "/settings" },
-];
+import { primaryTabs, moreTabs } from "@/config/mobileNav";
 
 export function MobileBottomNav() {
   const location = useLocation();
