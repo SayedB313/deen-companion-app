@@ -7,6 +7,8 @@ import {
   Heart,
   MessageCircle,
   LogOut,
+  Hand,
+  Settings,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,11 +27,13 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Qur'an", url: "/quran", icon: BookOpen },
+  { title: "Dhikr", url: "/dhikr", icon: Hand },
   { title: "Knowledge", url: "/knowledge", icon: GraduationCap },
   { title: "Fasting", url: "/fasting", icon: UtensilsCrossed },
   { title: "Time Tracker", url: "/time", icon: Clock },
   { title: "Self-Accountability", url: "/character", icon: Heart },
   { title: "AI Coach", url: "/coach", icon: MessageCircle },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {

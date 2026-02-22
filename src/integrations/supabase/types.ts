@@ -172,6 +172,36 @@ export type Database = {
         }
         Relationships: []
       }
+      dhikr_logs: {
+        Row: {
+          count: number
+          created_at: string
+          date: string
+          dhikr_type: string
+          id: string
+          target: number
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          date?: string
+          dhikr_type: string
+          id?: string
+          target?: number
+          user_id: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          date?: string
+          dhikr_type?: string
+          id?: string
+          target?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       fasting_log: {
         Row: {
           created_at: string
@@ -195,6 +225,36 @@ export type Database = {
           fast_type?: string
           id?: string
           notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          area: string
+          created_at: string
+          id: string
+          is_active: boolean
+          period: string
+          target_value: number
+          user_id: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          period?: string
+          target_value?: number
+          user_id: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          period?: string
+          target_value?: number
           user_id?: string
         }
         Relationships: []

@@ -4,6 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, UtensilsCrossed, Clock, Flame, Trophy, TrendingUp } from "lucide-react";
+import PrayerTimes from "@/components/PrayerTimes";
+import DashboardCharts from "@/components/DashboardCharts";
+import WeeklyInsights from "@/components/WeeklyInsights";
+import GoalsWidget from "@/components/GoalsWidget";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -32,7 +36,6 @@ const Dashboard = () => {
       const booksComplete = booksRes.data?.filter((b) => b.status === "completed").length ?? 0;
       const deenMins = timeRes.data?.reduce((s, t) => s + t.duration_minutes, 0) ?? 0;
 
-      // Calculate streak
       let streak = 0;
       if (streakRes.data) {
         const dates = streakRes.data.map((d) => d.date);
@@ -59,7 +62,7 @@ const Dashboard = () => {
     fetchStats();
   }, [user]);
 
-  const deenGoalMinutes = 420; // 7 hours
+  const deenGoalMinutes = 420;
   const deenPercent = Math.min(100, Math.round((stats.deenMinutesToday / deenGoalMinutes) * 100));
   const quranPercent = Math.round((stats.memorisedAyahs / stats.totalAyahs) * 100);
 
@@ -69,6 +72,9 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold">Assalamu Alaikum</h1>
         <p className="text-muted-foreground">Your deen journey at a glance</p>
       </div>
+
+      {/* Prayer Times + Hijri */}
+      <PrayerTimes />
 
       {/* Streak & Deen Time */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -118,6 +124,15 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Goals */}
+      <GoalsWidget />
+
+      {/* Weekly Insights */}
+      <WeeklyInsights />
+
+      {/* Charts */}
+      <DashboardCharts />
 
       {/* Fasting summary */}
       <div className="grid gap-4 sm:grid-cols-2">
