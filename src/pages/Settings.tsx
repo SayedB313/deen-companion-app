@@ -1,9 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileJson, FileText, Bell, BellOff } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import {
+  Download, FileJson, FileText, Bell, BellOff, User, Lock, Mail,
+  Trash2, AlertTriangle, Loader2, Save,
+} from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -19,21 +32,100 @@ const tables = [
   { name: "goals", label: "Goals" },
 ] as const;
 
-type TableName = typeof tables[number]["name"];
-
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { requestPermission } = useNotifications();
+
+  // Profile state
+  const [displayName, setDisplayName] = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Email state
+  const [newEmail, setNewEmail] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+
+  // Password state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Deen time goal
+  const [deenGoal, setDeenGoal] = useState("7");
+
+  // Export & notifications
   const [exporting, setExporting] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(
     typeof Notification !== "undefined" && Notification.permission === "granted"
   );
 
+  // Delete account
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+
+  // Load profile
+  useEffect(() => {
+    if (!user) return;
+    const loadProfile = async () => {
+      const { data } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+      if (data?.display_name) setDisplayName(data.display_name);
+    };
+    loadProfile();
+  }, [user]);
+
+  const updateProfile = async () => {
+    if (!user || !displayName.trim()) return;
+    setLoadingProfile(true);
+    const { error } = await supabase.from("profiles").update({ display_name: displayName.trim() }).eq("id", user.id);
+    toast(error
+      ? { title: "Error", description: error.message, variant: "destructive" }
+      : { title: "Profile updated", description: "Your display name has been saved." }
+    );
+    setLoadingProfile(false);
+  };
+
+  const updateEmail = async () => {
+    if (!newEmail.trim()) return;
+    setEmailLoading(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Confirmation sent", description: "Check your new email inbox to confirm the change." });
+      setNewEmail("");
+    }
+    setEmailLoading(false);
+  };
+
+  const updatePassword = async () => {
+    if (newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match.", variant: "destructive" });
+      return;
+    }
+    setPasswordLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password updated", description: "Your password has been changed." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setPasswordLoading(false);
+  };
+
   const enableNotifications = async () => {
     const granted = await requestPermission();
     setNotifEnabled(granted);
-    toast({ title: granted ? "Notifications enabled" : "Notifications blocked", description: granted ? "You'll get reminders to keep your streak alive." : "Please enable notifications in your browser settings." });
+    toast({
+      title: granted ? "Notifications enabled" : "Notifications blocked",
+      description: granted ? "You'll get reminders to keep your streak alive." : "Please enable notifications in your browser settings.",
+    });
   };
 
   const exportData = async (format: "json" | "csv") => {
@@ -55,7 +147,6 @@ const Settings = () => {
         filename = `deen-tracker-export-${new Date().toISOString().split("T")[0]}.json`;
         mimeType = "application/json";
       } else {
-        // CSV: combine all tables
         const csvParts: string[] = [];
         for (const [tableName, rows] of Object.entries(allData)) {
           if (rows.length === 0) continue;
@@ -86,21 +177,137 @@ const Settings = () => {
     }
   };
 
+  const clearChatHistory = async () => {
+    if (!user) return;
+    await supabase.from("chat_history").delete().eq("user_id", user.id);
+    toast({ title: "Chat history cleared", description: "Your AI Coach conversation has been reset." });
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your data and preferences</p>
+        <p className="text-muted-foreground">Manage your account, preferences, and data</p>
       </div>
 
+      {/* Profile */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Data Export & Backup</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <User className="h-4 w-4" /> Profile
+          </CardTitle>
+          <CardDescription>Your display name and account info</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input value={user?.email ?? ""} disabled className="bg-muted" />
+          </div>
+          <div className="space-y-2">
+            <Label>Display Name</Label>
+            <div className="flex gap-2">
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your name"
+                maxLength={100}
+              />
+              <Button onClick={updateProfile} disabled={loadingProfile} size="icon">
+                {loadingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Change Email */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="h-4 w-4" /> Change Email
+          </CardTitle>
+          <CardDescription>A confirmation will be sent to your new email</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Download all your tracked data. Your data belongs to you.
-          </p>
+          <div className="space-y-2">
+            <Label>New Email Address</Label>
+            <Input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="new@email.com"
+              maxLength={255}
+            />
+          </div>
+          <Button onClick={updateEmail} disabled={emailLoading || !newEmail.trim()}>
+            {emailLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
+            Update Email
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Change Password */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Lock className="h-4 w-4" /> Change Password
+          </CardTitle>
+          <CardDescription>Must be at least 6 characters</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <Label>New Password</Label>
+            <Input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Confirm New Password</Label>
+            <Input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+          <Button onClick={updatePassword} disabled={passwordLoading || !newPassword || !confirmPassword}>
+            {passwordLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
+            Update Password
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Notifications & Reminders
+          </CardTitle>
+          <CardDescription>Get nudges to stay consistent</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Browser Notifications</p>
+              <p className="text-xs text-muted-foreground">Streak-at-risk reminders at 9 PM</p>
+            </div>
+            <Switch checked={notifEnabled} onCheckedChange={enableNotifications} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Export */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Download className="h-4 w-4" /> Data Export & Backup
+          </CardTitle>
+          <CardDescription>Download all your tracked data — your data belongs to you</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
           <div className="flex gap-3">
             <Button onClick={() => exportData("json")} disabled={exporting}>
               <FileJson className="h-4 w-4 mr-2" /> Export JSON
@@ -112,17 +319,65 @@ const Settings = () => {
         </CardContent>
       </Card>
 
+      {/* Clear Chat History */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Notifications & Reminders</CardTitle>
+          <CardTitle className="text-base">AI Coach Data</CardTitle>
+          <CardDescription>Manage your AI Coach conversation history</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Get reminders when your streak is at risk or it's time for Quran.
-          </p>
-          <Button onClick={enableNotifications} variant={notifEnabled ? "secondary" : "default"}>
-            {notifEnabled ? <><BellOff className="h-4 w-4 mr-2" /> Notifications Enabled</> : <><Bell className="h-4 w-4 mr-2" /> Enable Notifications</>}
-          </Button>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline">
+                <Trash2 className="h-4 w-4 mr-2" /> Clear Chat History
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all your AI Coach conversations. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={clearChatHistory}>Clear History</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" /> Danger Zone
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Sign out of all devices</p>
+              <p className="text-xs text-muted-foreground">This will end all active sessions</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={async () => {
+              await supabase.auth.signOut({ scope: "global" });
+              toast({ title: "Signed out everywhere" });
+            }}>
+              Sign Out All
+            </Button>
+          </div>
+          <Separator />
+          <div>
+            <p className="text-sm font-medium">Delete Account</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Permanently delete your account and all associated data. This cannot be undone.
+            </p>
+            <p className="text-xs text-muted-foreground mb-2">
+              To delete your account, please contact support or use the Supabase dashboard.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
