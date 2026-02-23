@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square, SkipBack, SkipForward, Repeat, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Square, SkipBack, SkipForward, Repeat, Volume2, VolumeX, RefreshCw } from "lucide-react";
 
 const RECITERS = [
   { id: "ar.alafasy", name: "Mishary Alafasy", bitrate: 128 },
@@ -191,17 +191,24 @@ export default function QuranListeningMode({ surahId, ayahCount, surahs, surahAy
         {Array.from({ length: ayahCount }, (_, i) => i + 1).map(num => {
           const status = surahAyahs[num] ?? "not_started";
           return (
-            <button
-              key={num}
-              onClick={() => loadAndPlay(num)}
-              onContextMenu={e => { e.preventDefault(); onCycleStatus(num); }}
-              className={`h-8 w-8 rounded text-xs font-medium transition-colors ${statusColors[status]} ${
-                status === "memorised" ? "text-primary-foreground" : status === "in_progress" ? "text-warning-foreground" : status === "needs_review" ? "text-info-foreground" : "text-foreground"
-              } ${ayahNum === num && playing ? "ring-2 ring-primary ring-offset-1" : statusRing(num)}`}
-              title={`Ayah ${num} — Right-click to change status`}
-            >
-              {num}
-            </button>
+            <div key={num} className="relative group">
+              <button
+                onClick={() => loadAndPlay(num)}
+                className={`h-8 w-8 rounded text-xs font-medium transition-colors ${statusColors[status]} ${
+                  status === "memorised" ? "text-primary-foreground" : status === "in_progress" ? "text-warning-foreground" : status === "needs_review" ? "text-info-foreground" : "text-foreground"
+                } ${ayahNum === num && playing ? "ring-2 ring-primary ring-offset-1" : statusRing(num)}`}
+                title={`Ayah ${num} — Click to play`}
+              >
+                {num}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onCycleStatus(num); }}
+                className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-background border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Cycle status"
+              >
+                <RefreshCw className="h-2.5 w-2.5 text-muted-foreground" />
+              </button>
+            </div>
           );
         })}
       </div>

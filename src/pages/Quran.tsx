@@ -31,6 +31,7 @@ const Quran = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);
   const [progress, setProgress] = useState<AyahProgress[]>([]);
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
+  const [defaultTab, setDefaultTab] = useState<"listening" | "memorization">("listening");
   const [surahAyahs, setSurahAyahs] = useState<Record<number, string>>({});
   const { getAyahStatus } = useAyahRevision(selectedSurah?.id ?? null);
 
@@ -74,14 +75,20 @@ const Quran = () => {
     };
   });
 
-  const openSurah = (surah: Surah) => {
+  const openSurah = (surah: Surah, tab: "listening" | "memorization" = "listening") => {
     setSelectedSurah(surah);
+    setDefaultTab(tab);
     const ayahMap: Record<number, string> = {};
     for (let i = 1; i <= surah.ayah_count; i++) {
       const found = progress.find((p) => p.surah_id === surah.id && p.ayah_number === i);
       ayahMap[i] = found?.status ?? "not_started";
     }
     setSurahAyahs(ayahMap);
+  };
+
+  const handleReviewSurah = (surahId: number) => {
+    const surah = surahs.find(s => s.id === surahId);
+    if (surah) openSurah(surah, "memorization");
   };
 
   const cycleAyahStatus = async (ayahNum: number) => {
@@ -110,7 +117,7 @@ const Quran = () => {
         <Progress value={(totalMemorised / 6236) * 100} className="mt-2 h-3 max-w-md" />
       </div>
 
-      <RevisionScheduler surahsWithProgress={surahsWithProgress} />
+      <RevisionScheduler surahsWithProgress={surahsWithProgress} onReviewSurah={handleReviewSurah} />
 
       <div className="flex flex-wrap gap-2 text-xs">
         {[
@@ -162,7 +169,7 @@ const Quran = () => {
                 </p>
               </DialogHeader>
 
-              <Tabs defaultValue="listening" className="mt-2">
+              <Tabs defaultValue={defaultTab} key={selectedSurah.id + defaultTab} className="mt-2">
                 <TabsList className="w-full">
                   <TabsTrigger value="listening" className="flex-1 gap-1.5">
                     <Headphones className="h-3.5 w-3.5" /> Listening
