@@ -12,6 +12,7 @@ import {
   BookHeart,
   Compass,
   Share2,
+  Moon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ export const primaryTabs: NavTab[] = [
  * Secondary tabs shown in the "More" sheet.
  */
 export const moreTabs: NavTab[] = [
+  { label: "Ramadan", icon: Moon, path: "/ramadan" },
   { label: "Duas & Adhkar", icon: BookHeart, path: "/duas" },
   { label: "Knowledge", icon: GraduationCap, path: "/knowledge" },
   { label: "Fasting", icon: UtensilsCrossed, path: "/fasting" },

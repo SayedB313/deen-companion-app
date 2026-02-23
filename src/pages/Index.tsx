@@ -11,6 +11,7 @@ import WeeklyInsights from "@/components/WeeklyInsights";
 import GoalsWidget from "@/components/GoalsWidget";
 import StreakBadges from "@/components/StreakBadges";
 import InspirationCard from "@/components/InspirationCard";
+import WeeklyReportCard from "@/components/WeeklyReportCard";
 import { useStreaks } from "@/hooks/useStreaks";
 import { useDailyInspiration } from "@/hooks/useDailyInspiration";
 
@@ -170,6 +171,9 @@ const Dashboard = () => {
 
       {/* Weekly Insights */}
       <WeeklyInsights />
+
+      {/* AI Weekly Report */}
+      <WeeklyReportCard />
 
       {/* Charts */}
       <DashboardCharts />
