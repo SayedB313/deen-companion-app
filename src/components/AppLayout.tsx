@@ -15,9 +15,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <SidebarProvider>
       <OfflineBanner />
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full max-w-full overflow-x-clip">
         {!isMobile && <AppSidebar />}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="h-12 md:h-14 flex items-center justify-between border-b px-3 md:px-4 bg-background">
             <div className="flex items-center gap-2">
               {!isMobile && <SidebarTrigger />}
@@ -28,7 +28,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <ThemeToggle />
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-x-hidden overflow-y-auto pb-20 md:pb-6">{children}</main>
+          <main className="flex-1 p-4 md:p-6 overflow-y-auto pb-20 md:pb-6 min-w-0">{children}</main>
         </div>
         {isMobile && <MobileBottomNav />}
         {isMobile && <CoachPanel />}
