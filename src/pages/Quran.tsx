@@ -125,7 +125,7 @@ const Quran = () => {
   });
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-hidden">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-bold">Qur'an</h1>
         <p className="text-muted-foreground">{totalMemorised} / 6,236 ayahs memorised</p>
@@ -182,7 +182,7 @@ const Quran = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
         {filteredSurahs.map((surah) => {
           const status = getSurahStatus(surah);
           const pct = getSurahPercent(surah);
