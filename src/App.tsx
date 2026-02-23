@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import Auth from "./pages/Auth";
+import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Index";
 import Quran from "./pages/Quran";
@@ -24,6 +25,7 @@ import Duas from "./pages/Duas";
 import Qibla from "./pages/Qibla";
 import ShareCards from "./pages/ShareCards";
 import Ramadan from "./pages/Ramadan";
+import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,7 +47,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/welcome" replace />;
   if (onboarded === null) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
   if (!onboarded) return <Navigate to="/onboarding" replace />;
   return <AppLayout>{children}</AppLayout>;
@@ -56,6 +58,13 @@ function AuthRoute() {
   if (loading) return null;
   if (user) return <Navigate to="/" replace />;
   return <Auth />;
+}
+
+function LandingRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/" replace />;
+  return <Landing />;
 }
 
 function OnboardingRoute() {
@@ -74,6 +83,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              <Route path="/welcome" element={<LandingRoute />} />
               <Route path="/auth" element={<AuthRoute />} />
               <Route path="/onboarding" element={<OnboardingRoute />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -88,6 +98,7 @@ const App = () => (
               <Route path="/qibla" element={<ProtectedRoute><Qibla /></ProtectedRoute>} />
               <Route path="/share" element={<ProtectedRoute><ShareCards /></ProtectedRoute>} />
               <Route path="/ramadan" element={<ProtectedRoute><Ramadan /></ProtectedRoute>} />
+              <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />

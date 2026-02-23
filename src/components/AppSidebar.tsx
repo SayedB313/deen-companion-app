@@ -14,6 +14,7 @@ import {
   Compass,
   Share2,
   Moon,
+  Users,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const mainNav = [
 ];
 
 const toolsNav = [
+  { title: "Community", url: "/community", icon: Users },
   { title: "Ramadan", url: "/ramadan", icon: Moon },
   { title: "Qibla Compass", url: "/qibla", icon: Compass },
   { title: "Share Progress", url: "/share", icon: Share2 },
