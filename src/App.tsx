@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +7,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Index";
 import Quran from "./pages/Quran";
 import Knowledge from "./pages/Knowledge";
@@ -23,8 +26,24 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("onboarding_complete")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        setOnboarded(data?.onboarding_complete ?? false);
+      });
+  }, [user]);
+
   if (loading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
   if (!user) return <Navigate to="/auth" replace />;
+  if (onboarded === null) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  if (!onboarded) return <Navigate to="/onboarding" replace />;
   return <AppLayout>{children}</AppLayout>;
 }
 
@@ -33,6 +52,13 @@ function AuthRoute() {
   if (loading) return null;
   if (user) return <Navigate to="/" replace />;
   return <Auth />;
+}
+
+function OnboardingRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/auth" replace />;
+  return <Onboarding />;
 }
 
 const App = () => (
@@ -45,6 +71,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/onboarding" element={<OnboardingRoute />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/quran" element={<ProtectedRoute><Quran /></ProtectedRoute>} />
               <Route path="/knowledge" element={<ProtectedRoute><Knowledge /></ProtectedRoute>} />
