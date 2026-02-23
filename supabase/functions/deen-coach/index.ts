@@ -203,22 +203,35 @@ serve(async (req) => {
     const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
 
-    // Extract user token and fetch their data
+    // Require authentication
     const authHeader = req.headers.get("authorization") || "";
     const token = authHeader.replace("Bearer ", "");
-    let dataSummary = "";
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (token) {
-      try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-        const supabaseClient = createClient(supabaseUrl, supabaseKey, {
-          global: { headers: { Authorization: `Bearer ${token}` } },
-        });
-        dataSummary = await fetchUserData(supabaseClient);
-      } catch (e) {
-        console.error("Failed to fetch user data:", e);
-      }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let dataSummary = "";
+    try {
+      dataSummary = await fetchUserData(supabaseClient);
+    } catch (e) {
+      console.error("Failed to fetch user data:", e);
     }
 
     const systemPrompt = `You are a personal Islamic lifestyle coach called "Deen Coach". You help the user stay consistent with their deen (Islamic practice) journey. You are knowledgeable in Qur'an, Hadith, Fiqh, and Islamic self-development.
