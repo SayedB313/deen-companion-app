@@ -35,7 +35,7 @@ const tables = [
 const Settings = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { requestPermission } = useNotifications();
+  const { subscribe, unsubscribe, isSubscribed } = useNotifications();
 
   // Profile state
   const [displayName, setDisplayName] = useState("");
@@ -143,13 +143,19 @@ const Settings = () => {
     setPasswordLoading(false);
   };
 
-  const enableNotifications = async () => {
-    const granted = await requestPermission();
-    setNotifEnabled(granted);
-    toast({
-      title: granted ? "Notifications enabled" : "Notifications blocked",
-      description: granted ? "You'll get reminders to keep your streak alive." : "Please enable notifications in your browser settings.",
-    });
+  const toggleNotifications = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+      setNotifEnabled(false);
+      toast({ title: "Notifications disabled" });
+    } else {
+      const granted = await subscribe();
+      setNotifEnabled(granted);
+      toast({
+        title: granted ? "Notifications enabled" : "Notifications blocked",
+        description: granted ? "You'll get reminders to keep your streak alive." : "Please enable notifications in your browser settings.",
+      });
+    }
   };
 
   const exportData = async (format: "json" | "csv") => {
@@ -318,7 +324,7 @@ const Settings = () => {
               <p className="text-sm font-medium">Browser Notifications</p>
               <p className="text-xs text-muted-foreground">Streak-at-risk reminders at 9 PM</p>
             </div>
-            <Switch checked={notifEnabled} onCheckedChange={enableNotifications} />
+            <Switch checked={notifEnabled} onCheckedChange={toggleNotifications} />
           </div>
         </CardContent>
       </Card>
