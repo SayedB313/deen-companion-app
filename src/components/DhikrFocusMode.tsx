@@ -74,14 +74,15 @@ const DhikrFocusMode = ({ dhikrs, startIndex, onTap, onReset, onClose }: DhikrFo
 
   if (!current) return null;
 
-  const bgOpacity = Math.round(progress * 15);
+  // Solid background that shifts hue as progress increases
+  const hueShift = Math.round(progress * 20); // subtle shift
 
   if (allDone) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background"
+        className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background"
       >
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
@@ -103,24 +104,33 @@ const DhikrFocusMode = ({ dhikrs, startIndex, onTap, onReset, onClose }: DhikrFo
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col transition-colors duration-700"
-      style={{ background: `hsl(var(--primary) / ${bgOpacity}%)` }}
+      className="fixed inset-0 z-[100] flex flex-col bg-background"
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between p-4">
-        <Button variant="ghost" size="icon" onClick={onClose}>
+      <div className="flex items-center justify-between p-4 relative z-10">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onClose}
+          className="h-10 w-10 rounded-full border-border bg-card shadow-sm"
+        >
           <X className="h-5 w-5" />
         </Button>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground bg-card/80 px-3 py-1 rounded-full border border-border/50">
           {currentIndex + 1} / {dhikrs.length}
         </span>
-        <Button variant="ghost" size="icon" onClick={advanceToNext}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={advanceToNext}
+          className="h-10 w-10 rounded-full border-border bg-card shadow-sm"
+        >
           <SkipForward className="h-5 w-5" />
         </Button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={current.type}
@@ -143,10 +153,10 @@ const DhikrFocusMode = ({ dhikrs, startIndex, onTap, onReset, onClose }: DhikrFo
         {/* Circular tap target with progress ring */}
         <div className="relative flex items-center justify-center">
           <svg className="absolute w-56 h-56 md:w-64 md:h-64 -rotate-90" viewBox="0 0 200 200">
-            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" />
+            <circle cx="100" cy="100" r="90" fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
             <motion.circle
               cx="100" cy="100" r="90" fill="none"
-              stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round"
+              stroke="hsl(var(--primary))" strokeWidth="5" strokeLinecap="round"
               strokeDasharray={2 * Math.PI * 90}
               animate={{ strokeDashoffset: 2 * Math.PI * 90 * (1 - progress) }}
               transition={{ duration: 0.3 }}
@@ -156,17 +166,17 @@ const DhikrFocusMode = ({ dhikrs, startIndex, onTap, onReset, onClose }: DhikrFo
           <AnimatePresence>
             <motion.div
               key={pulseKey}
-              initial={{ scale: 1, opacity: 0.4 }}
+              initial={{ scale: 1, opacity: 0.3 }}
               animate={{ scale: 1.3, opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="absolute w-48 h-48 md:w-56 md:h-56 rounded-full bg-primary/20"
+              className="absolute w-48 h-48 md:w-56 md:h-56 rounded-full bg-primary/15"
             />
           </AnimatePresence>
 
           <button
             onClick={handleTap}
             disabled={completed || allDone}
-            className="relative w-48 h-48 md:w-56 md:h-56 rounded-full flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform select-none touch-manipulation border-2 border-border bg-card"
+            className="relative w-48 h-48 md:w-56 md:h-56 rounded-full flex flex-col items-center justify-center gap-1 active:scale-95 transition-transform select-none touch-manipulation border-2 border-border bg-card shadow-lg"
           >
             <span className="text-5xl md:text-6xl font-bold tabular-nums text-foreground">
               {localCount}
@@ -191,7 +201,7 @@ const DhikrFocusMode = ({ dhikrs, startIndex, onTap, onReset, onClose }: DhikrFo
 
       {/* Bottom */}
       <div className="flex items-center justify-center gap-4 p-6 safe-area-pb">
-        <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+        <Button variant="outline" size="sm" onClick={handleReset} className="gap-2 shadow-sm">
           <RotateCcw className="h-4 w-4" /> Reset
         </Button>
       </div>
