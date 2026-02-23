@@ -85,39 +85,31 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero */}
       <section className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={0}>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium mb-6">
-              <Sparkles className="h-3 w-3" /> Your complete Islamic growth companion
-            </span>
-          </motion.div>
-
+        <div className="max-w-3xl mx-auto text-center">
           <motion.h1
             className="font-display text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight"
-            initial="hidden" animate="visible" variants={fadeUp} custom={1}
+            initial="hidden" animate="visible" variants={fadeUp} custom={0}
           >
-            Grow closer to Allah,{" "}
-            <span className="text-primary">one day at a time</span>
+            Build a better deen,{" "}
+            <span className="text-primary">every single day</span>
           </motion.h1>
 
           <motion.p
-            className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
-            initial="hidden" animate="visible" variants={fadeUp} custom={2}
+            className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed"
+            initial="hidden" animate="visible" variants={fadeUp} custom={1}
           >
-            Track your Quran memorisation, prayers, fasting, and daily habits.
-            Get AI-powered guidance and stay accountable with a partner —
-            all in one beautiful, private space.
+            The all-in-one tracker for your Quran, prayers, fasting, and daily habits.
+            Stay consistent. Stay accountable.
           </motion.p>
 
           <motion.div
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-            initial="hidden" animate="visible" variants={fadeUp} custom={3}
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
+            initial="hidden" animate="visible" variants={fadeUp} custom={2}
           >
             <Link to="/auth?signup=true">
               <Button size="lg" className="text-base px-8 h-12">
-                Start Your Journey <ChevronRight className="h-4 w-4 ml-1" />
+                Get Started — Free
               </Button>
             </Link>
             <a href="#features">
@@ -125,23 +117,6 @@ export default function Landing() {
                 See Features
               </Button>
             </a>
-          </motion.div>
-
-          {/* Stats bar */}
-          <motion.div
-            className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto"
-            initial="hidden" animate="visible" variants={fadeUp} custom={4}
-          >
-            {[
-              { value: "6,236", label: "Ayahs tracked" },
-              { value: "114", label: "Surahs" },
-              { value: "∞", label: "Hasanat, inshaAllah" },
-            ].map(s => (
-              <div key={s.label} className="text-center">
-                <div className="text-2xl sm:text-3xl font-display font-bold text-primary">{s.value}</div>
-                <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
-              </div>
-            ))}
           </motion.div>
         </div>
       </section>
