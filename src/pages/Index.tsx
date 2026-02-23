@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpen, UtensilsCrossed, Clock, Flame, Trophy, TrendingUp, AlertTriangle, Award } from "lucide-react";
 import TodayHub from "@/components/TodayHub";
 import PrayerTimes from "@/components/PrayerTimes";
@@ -30,7 +31,6 @@ const Dashboard = () => {
     deenMinutesToday: 0,
   });
 
-  // Fetch display name
   useEffect(() => {
     if (!user) return;
     supabase
@@ -79,7 +79,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 overflow-x-hidden">
-      {/* Personalized Greeting */}
+      {/* Greeting */}
       <div>
         <h1 className="text-2xl font-bold">{greeting}</h1>
         <p className="text-muted-foreground">Your deen journey at a glance</p>
@@ -88,14 +88,14 @@ const Dashboard = () => {
       {/* Daily Inspiration */}
       <InspirationCard text={inspiration.text} source={inspiration.source} loading={inspirationLoading} />
 
-      {/* Unified Today Hub */}
+      {/* Smart Today Hub with Progress Ring */}
       <TodayHub />
 
-      {/* Prayer Times + Salah Tracker */}
+      {/* Prayer Times */}
       <PrayerTimes />
 
-      {/* Streak & Deen Time */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Streak & Deen Time — compact row */}
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card className={streakData.streakAtRisk ? "border-warning/50" : ""}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Daily Streak</CardTitle>
@@ -126,29 +126,6 @@ const Dashboard = () => {
             <div className="text-3xl font-bold">{Math.floor(stats.deenMinutesToday / 60)}h {stats.deenMinutesToday % 60}m</div>
             <Progress value={deenPercent} className="mt-2 h-2" />
             <p className="text-xs text-muted-foreground mt-1">{deenPercent}% of 7h goal</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Qur'an Memorised</CardTitle>
-            <BookOpen className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{quranPercent}%</div>
-            <Progress value={quranPercent} className="mt-2 h-2" />
-            <p className="text-xs text-muted-foreground mt-1">{stats.memorisedAyahs} / {stats.totalAyahs} ayahs</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Books Read</CardTitle>
-            <Trophy className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.booksRead}</div>
-            <p className="text-xs text-muted-foreground">of {stats.totalBooks} total</p>
           </CardContent>
         </Card>
       </div>
@@ -182,29 +159,48 @@ const Dashboard = () => {
       {/* Charts */}
       <DashboardCharts />
 
-      {/* Fasting summary */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Days Fasted</CardTitle>
-            <UtensilsCrossed className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{stats.daysFasted}</div>
-            <p className="text-xs text-muted-foreground">total logged</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Growth</CardTitle>
-            <TrendingUp className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Keep logging daily to build your streak and unlock milestones. Consistency is the key to growth.</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Lifetime Stats — collapsible */}
+      <Accordion type="single" collapsible>
+        <AccordionItem value="lifetime" className="border rounded-lg">
+          <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" /> Lifetime Stats
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <BookOpen className="h-3.5 w-3.5" /> Qur'an Memorised
+                </div>
+                <p className="text-2xl font-bold">{quranPercent}%</p>
+                <Progress value={quranPercent} className="h-1.5" />
+                <p className="text-xs text-muted-foreground">{stats.memorisedAyahs} / {stats.totalAyahs} ayahs</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Trophy className="h-3.5 w-3.5" /> Books Read
+                </div>
+                <p className="text-2xl font-bold">{stats.booksRead}</p>
+                <p className="text-xs text-muted-foreground">of {stats.totalBooks} total</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <UtensilsCrossed className="h-3.5 w-3.5" /> Days Fasted
+                </div>
+                <p className="text-2xl font-bold">{stats.daysFasted}</p>
+                <p className="text-xs text-muted-foreground">total logged</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <TrendingUp className="h-3.5 w-3.5" /> Growth
+                </div>
+                <p className="text-sm text-muted-foreground">Keep logging daily to build your streak and unlock milestones.</p>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };

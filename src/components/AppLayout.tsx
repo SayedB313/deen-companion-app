@@ -5,12 +5,14 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { CoachPanel } from "@/components/CoachPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
+import OfflineBanner from "@/components/OfflineBanner";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
 
   return (
     <SidebarProvider>
+      <OfflineBanner />
       <div className="min-h-screen flex w-full">
         {!isMobile && <AppSidebar />}
         <div className="flex-1 flex flex-col">

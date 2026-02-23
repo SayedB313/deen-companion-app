@@ -1,16 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import {
-  Check, BookOpen, Moon, Clock, Sparkles, Plus,
-  ChevronDown, ChevronUp,
-} from "lucide-react";
+import { Check, BookOpen, Moon, Clock, Sparkles, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const FARD_PRAYERS = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
 const SUNNAH_PRAYERS = [
@@ -35,6 +30,55 @@ interface TodayData {
   deenMinutes: number;
 }
 
+/** SVG circular progress ring */
+const ProgressRing = ({ percent, size = 120, strokeWidth = 8 }: { percent: number; size?: number; strokeWidth?: number }) => {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - percent / 100);
+
+  return (
+    <svg width={size} height={size} className="-rotate-90">
+      <circle
+        cx={size / 2} cy={size / 2} r={radius}
+        fill="none" stroke="hsl(var(--muted))" strokeWidth={strokeWidth}
+      />
+      <motion.circle
+        cx={size / 2} cy={size / 2} r={radius}
+        fill="none" stroke="hsl(var(--primary))" strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      />
+    </svg>
+  );
+};
+
+/** "Next Up" prompt logic */
+function getNextUpPrompt(data: TodayData, prayerTimes: { name: string; time: string }[]): string | null {
+  // Check if all prayers done
+  const prayersDone = FARD_PRAYERS.filter(p => data.salahFard[p]).length;
+  if (prayersDone < 5 && prayerTimes.length > 0) {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const nextPrayer = prayerTimes.find(p => {
+      const [h, m] = p.time.split(":").map(Number);
+      return h * 60 + m > nowMin;
+    });
+    if (nextPrayer) {
+      const [h, m] = nextPrayer.time.split(":").map(Number);
+      const diff = (h * 60 + m) - nowMin;
+      const hrs = Math.floor(diff / 60);
+      const mins = diff % 60;
+      return `${nextPrayer.name} in ${hrs > 0 ? `${hrs}h ` : ""}${mins}m`;
+    }
+  }
+  if (data.dhikrDone < 3) return "Complete your daily adhkar";
+  if (!data.quranLogged) return "Read some Qur'an today";
+  if (data.deenMinutes === 0) return "Log some deen time";
+  return null;
+}
+
 const TodayHub = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -49,6 +93,34 @@ const TodayHub = () => {
   });
   const [showSunnah, setShowSunnah] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [prayerTimes, setPrayerTimes] = useState<{ name: string; time: string }[]>([]);
+
+  // Fetch prayer times for "Next Up"
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const d = new Date();
+            const res = await fetch(
+              `https://api.aladhan.com/v1/timings/${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&method=2`
+            );
+            const json = await res.json();
+            const t = json.data.timings;
+            setPrayerTimes([
+              { name: "Fajr", time: t.Fajr },
+              { name: "Dhuhr", time: t.Dhuhr },
+              { name: "Asr", time: t.Asr },
+              { name: "Maghrib", time: t.Maghrib },
+              { name: "Isha", time: t.Isha },
+            ]);
+          } catch {}
+        },
+        () => {},
+        { timeout: 5000 }
+      );
+    }
+  }, []);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -107,7 +179,6 @@ const TodayHub = () => {
   const toggleFasting = async () => {
     if (!user) return;
     if (data.fastingToday) {
-      // Remove today's fast
       await supabase.from("fasting_log").delete().eq("user_id", user.id).eq("date", today);
       setData((prev) => ({ ...prev, fastingToday: false }));
     } else {
@@ -119,7 +190,6 @@ const TodayHub = () => {
   const fardCount = FARD_PRAYERS.filter((p) => data.salahFard[p]).length;
   const sunnahCount = SUNNAH_PRAYERS.filter((p) => data.salahSunnah[p.key]).length;
 
-  // Overall completion
   const sections = [
     { done: fardCount === 5, label: "Salah" },
     { done: data.dhikrDone >= 3, label: "Dhikr" },
@@ -128,6 +198,7 @@ const TodayHub = () => {
   ];
   const completedSections = sections.filter((s) => s.done).length;
   const overallPct = Math.round((completedSections / sections.length) * 100);
+  const nextUp = useMemo(() => getNextUpPrompt(data, prayerTimes), [data, prayerTimes]);
 
   if (loading) return null;
 
@@ -140,15 +211,67 @@ const TodayHub = () => {
             {completedSections}/{sections.length} complete
           </Badge>
         </div>
-        <Progress value={overallPct} className="h-1.5 mt-2" />
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Progress Ring Hero */}
+        <div className="flex items-center gap-5">
+          <div className="relative flex items-center justify-center shrink-0">
+            <ProgressRing percent={overallPct} size={100} strokeWidth={7} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <motion.span
+                key={overallPct}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-2xl font-bold text-foreground"
+              >
+                {overallPct}%
+              </motion.span>
+            </div>
+          </div>
+          <div className="flex-1 space-y-1.5">
+            <div className="flex flex-wrap gap-1.5">
+              {sections.map(s => (
+                <Badge
+                  key={s.label}
+                  variant={s.done ? "default" : "outline"}
+                  className={`text-xs ${s.done ? "bg-primary/15 text-primary border-primary/30" : ""}`}
+                >
+                  {s.done && <Check className="h-3 w-3 mr-0.5" />}
+                  {s.label}
+                </Badge>
+              ))}
+            </div>
+            {/* Next Up Prompt */}
+            <AnimatePresence mode="wait">
+              {nextUp && (
+                <motion.div
+                  key={nextUp}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <ArrowRight className="h-3 w-3 text-primary" />
+                  <span>Next up: <span className="font-medium text-foreground">{nextUp}</span></span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {overallPct === 100 && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-xs text-primary font-medium"
+              >
+                ✨ MashaAllah! All done for today
+              </motion.p>
+            )}
+          </div>
+        </div>
+
         {/* Salah - Fard */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium flex items-center gap-1.5">
-              🕌 Salah
-            </span>
+            <span className="text-sm font-medium flex items-center gap-1.5">🕌 Salah</span>
             <span className="text-xs text-muted-foreground">{fardCount}/5</span>
           </div>
           <div className="flex gap-2">
@@ -171,7 +294,6 @@ const TodayHub = () => {
             })}
           </div>
 
-          {/* Sunnah toggle */}
           <button
             onClick={() => setShowSunnah(!showSunnah)}
             className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
@@ -230,7 +352,7 @@ const TodayHub = () => {
           </div>
         </button>
 
-        {/* Fasting quick toggle */}
+        {/* Fasting */}
         <button
           onClick={toggleFasting}
           className={`w-full flex items-center justify-between rounded-lg p-3 transition-colors text-left ${

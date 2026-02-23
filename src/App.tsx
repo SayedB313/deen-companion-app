@@ -28,7 +28,16 @@ import Ramadan from "./pages/Ramadan";
 import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,   // 5 min — data stays fresh
+      gcTime: 30 * 60 * 1000,     // 30 min — cached in memory
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
