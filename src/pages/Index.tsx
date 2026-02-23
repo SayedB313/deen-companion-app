@@ -3,14 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, UtensilsCrossed, Clock, Flame, Trophy, TrendingUp } from "lucide-react";
+import { BookOpen, UtensilsCrossed, Clock, Flame, Trophy, TrendingUp, AlertTriangle, Award } from "lucide-react";
 import PrayerTimes from "@/components/PrayerTimes";
 import DashboardCharts from "@/components/DashboardCharts";
 import WeeklyInsights from "@/components/WeeklyInsights";
 import GoalsWidget from "@/components/GoalsWidget";
+import StreakBadges from "@/components/StreakBadges";
+import { useStreaks } from "@/hooks/useStreaks";
+import { getDailyInspiration } from "@/data/dailyInspiration";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const streakData = useStreaks();
+  const inspiration = getDailyInspiration();
+  const [displayName, setDisplayName] = useState("");
   const [stats, setStats] = useState({
     totalAyahs: 0,
     memorisedAyahs: 0,
@@ -18,36 +24,34 @@ const Dashboard = () => {
     totalBooks: 0,
     daysFasted: 0,
     deenMinutesToday: 0,
-    streak: 0,
   });
+
+  // Fetch display name
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.display_name) setDisplayName(data.display_name);
+      });
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
     const fetchStats = async () => {
-      const [quranRes, booksRes, fastingRes, timeRes, streakRes] = await Promise.all([
+      const [quranRes, booksRes, fastingRes, timeRes] = await Promise.all([
         supabase.from("quran_progress").select("status").eq("user_id", user.id),
         supabase.from("books").select("status").eq("user_id", user.id),
         supabase.from("fasting_log").select("id").eq("user_id", user.id),
         supabase.from("time_logs").select("duration_minutes").eq("user_id", user.id).eq("date", new Date().toISOString().split("T")[0]).eq("is_deen", true),
-        supabase.from("daily_logs").select("date").eq("user_id", user.id).order("date", { ascending: false }).limit(100),
       ]);
 
       const memorised = quranRes.data?.filter((a) => a.status === "memorised").length ?? 0;
       const booksComplete = booksRes.data?.filter((b) => b.status === "completed").length ?? 0;
       const deenMins = timeRes.data?.reduce((s, t) => s + t.duration_minutes, 0) ?? 0;
-
-      let streak = 0;
-      if (streakRes.data) {
-        const dates = streakRes.data.map((d) => d.date);
-        const today = new Date();
-        for (let i = 0; i < dates.length; i++) {
-          const expected = new Date(today);
-          expected.setDate(expected.getDate() - i);
-          if (dates[i] === expected.toISOString().split("T")[0]) {
-            streak++;
-          } else break;
-        }
-      }
 
       setStats({
         totalAyahs: 6236,
@@ -56,7 +60,6 @@ const Dashboard = () => {
         totalBooks: booksRes.data?.length ?? 0,
         daysFasted: fastingRes.data?.length ?? 0,
         deenMinutesToday: deenMins,
-        streak,
       });
     };
     fetchStats();
@@ -66,26 +69,49 @@ const Dashboard = () => {
   const deenPercent = Math.min(100, Math.round((stats.deenMinutesToday / deenGoalMinutes) * 100));
   const quranPercent = Math.round((stats.memorisedAyahs / stats.totalAyahs) * 100);
 
+  const greeting = displayName
+    ? `Assalamu Alaikum, ${displayName}`
+    : "Assalamu Alaikum";
+
   return (
     <div className="space-y-6 overflow-x-hidden">
+      {/* Personalized Greeting */}
       <div>
-        <h1 className="text-2xl font-bold">Assalamu Alaikum</h1>
+        <h1 className="text-2xl font-bold">{greeting}</h1>
         <p className="text-muted-foreground">Your deen journey at a glance</p>
       </div>
 
-      {/* Prayer Times + Hijri */}
+      {/* Daily Inspiration */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="py-4">
+          <p className="text-sm italic">"{inspiration.text}"</p>
+          <p className="text-xs text-muted-foreground mt-1">— {inspiration.source}</p>
+        </CardContent>
+      </Card>
+
+      {/* Prayer Times + Salah Tracker */}
       <PrayerTimes />
 
       {/* Streak & Deen Time */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className={streakData.streakAtRisk ? "border-warning/50" : ""}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Daily Streak</CardTitle>
-            <Flame className="h-4 w-4 text-warning" />
+            {streakData.streakAtRisk ? (
+              <AlertTriangle className="h-4 w-4 text-warning animate-pulse" />
+            ) : (
+              <Flame className="h-4 w-4 text-warning" />
+            )}
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{stats.streak}</div>
-            <p className="text-xs text-muted-foreground">days</p>
+            <div className="text-3xl font-bold">{streakData.currentStreak}</div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">days</p>
+              <p className="text-xs text-muted-foreground">Best: {streakData.longestStreak}</p>
+            </div>
+            {streakData.streakAtRisk && (
+              <p className="text-xs text-warning mt-1 font-medium">⚠️ Log today to keep your streak!</p>
+            )}
           </CardContent>
         </Card>
 
@@ -124,6 +150,20 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Achievements */}
+      {streakData.achievements.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Award className="h-4 w-4 text-warning" /> Achievements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StreakBadges achievements={streakData.achievements} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Goals */}
       <GoalsWidget compact />

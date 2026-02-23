@@ -17,6 +17,8 @@ async function fetchUserData(supabaseClient: any) {
     { data: milestones },
     { data: dailyLogs },
     { data: topics },
+    { data: salahLogs },
+    { data: achievements },
   ] = await Promise.all([
     supabaseClient.from("quran_progress").select("surah_id, ayah_number, status, surahs(name_transliteration, ayah_count)").order("updated_at", { ascending: false }).limit(200),
     supabaseClient.from("fasting_log").select("date, fast_type, notes").order("date", { ascending: false }).limit(30),
@@ -27,9 +29,11 @@ async function fetchUserData(supabaseClient: any) {
     supabaseClient.from("milestones").select("name, description, achieved_at").order("achieved_at", { ascending: false }).limit(20),
     supabaseClient.from("daily_logs").select("date, logged").order("date", { ascending: false }).limit(30),
     supabaseClient.from("topics").select("name, category, progress_percent"),
+    supabaseClient.from("salah_logs").select("prayer, prayed, date").eq("is_sunnah", false).order("date", { ascending: false }).limit(50),
+    supabaseClient.from("achievements").select("achievement_key, achieved_at").order("achieved_at", { ascending: false }),
   ]);
 
-  return buildDataSummary({ quranProgress, fastingLogs, timeLogs, characterLogs, books, courses, milestones, dailyLogs, topics });
+  return buildDataSummary({ quranProgress, fastingLogs, timeLogs, characterLogs, books, courses, milestones, dailyLogs, topics, salahLogs, achievements });
 }
 
 function buildDataSummary(data: any): string {
@@ -112,6 +116,21 @@ function buildDataSummary(data: any): string {
   if (data.dailyLogs?.length) {
     const loggedDays = data.dailyLogs.filter((d: any) => d.logged).length;
     parts.push(`📅 CONSISTENCY: ${loggedDays}/${data.dailyLogs.length} days logged recently.`);
+  }
+
+  // Salah tracking
+  if (data.salahLogs?.length) {
+    const today = new Date().toISOString().split("T")[0];
+    const todayPrayers = data.salahLogs.filter((s: any) => s.date === today && s.prayed);
+    const totalPrayed = data.salahLogs.filter((s: any) => s.prayed).length;
+    parts.push(`🕌 SALAH: ${todayPrayers.length}/5 prayers today. ${totalPrayed} total prayers logged.`);
+  } else {
+    parts.push("🕌 SALAH: No prayer tracking yet.");
+  }
+
+  // Achievements
+  if (data.achievements?.length) {
+    parts.push(`🏅 ACHIEVEMENTS: ${data.achievements.map((a: any) => a.achievement_key).join(", ")}`);
   }
 
   return parts.join("\n");
