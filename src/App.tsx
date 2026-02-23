@@ -24,7 +24,6 @@ import Reports from "./pages/Reports";
 import Duas from "./pages/Duas";
 import Qibla from "./pages/Qibla";
 import ShareCards from "./pages/ShareCards";
-import Ramadan from "./pages/Ramadan";
 import Community from "./pages/Community";
 import NotFound from "./pages/NotFound";
 
@@ -106,7 +105,7 @@ const App = () => (
               <Route path="/duas" element={<ProtectedRoute><Duas /></ProtectedRoute>} />
               <Route path="/qibla" element={<ProtectedRoute><Qibla /></ProtectedRoute>} />
               <Route path="/share" element={<ProtectedRoute><ShareCards /></ProtectedRoute>} />
-              <Route path="/ramadan" element={<ProtectedRoute><Ramadan /></ProtectedRoute>} />
+              <Route path="/ramadan" element={<Navigate to="/fasting" replace />} />
               <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
