@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achieved_at: string
+          achievement_key: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string
+          achievement_key: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string
+          achievement_key?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string | null
@@ -408,6 +429,36 @@ export type Database = {
           id?: string
           user_id?: string
           week_start?: string
+        }
+        Relationships: []
+      }
+      salah_logs: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_sunnah: boolean
+          prayed: boolean
+          prayer: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_sunnah?: boolean
+          prayed?: boolean
+          prayer: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_sunnah?: boolean
+          prayed?: boolean
+          prayer?: string
+          user_id?: string
         }
         Relationships: []
       }
