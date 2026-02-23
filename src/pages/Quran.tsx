@@ -193,6 +193,7 @@ const Quran = () => {
                 <TabsContent value="memorization">
                   <QuranMemorizationMode
                     surahId={selectedSurah.id}
+                    surahName={selectedSurah.name_english}
                     ayahCount={selectedSurah.ayah_count}
                     surahs={surahs}
                     surahAyahs={surahAyahs}

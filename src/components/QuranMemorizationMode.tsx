@@ -4,10 +4,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Play, Pause, Volume2, VolumeX, SkipForward, CheckCircle2, RotateCcw, Zap, Loader2 } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, SkipForward, CheckCircle2, RotateCcw, Zap, Loader2, Sparkles } from "lucide-react";
 import { useQuranText } from "@/hooks/useQuranText";
 import { useAyahRevision } from "@/hooks/useAyahRevision";
-
+import { useAyahExplainer } from "@/hooks/useAyahExplainer";
+import ReactMarkdown from "react-markdown";
 const RECITERS = [
   { id: "ar.alafasy", name: "Mishary Alafasy", bitrate: 128 },
   { id: "ar.abdurrahmaansudais", name: "Abdurrahman As-Sudais", bitrate: 192 },
@@ -21,15 +22,17 @@ const REPEAT_OPTIONS = [2, 3, 5, 7, 10, 20];
 
 interface Props {
   surahId: number;
+  surahName: string;
   ayahCount: number;
   surahs: { id: number; ayah_count: number }[];
   surahAyahs: Record<number, string>;
   onCycleStatus: (ayah: number) => void;
 }
 
-export default function QuranMemorizationMode({ surahId, ayahCount, surahs, surahAyahs, onCycleStatus }: Props) {
+export default function QuranMemorizationMode({ surahId, surahName, ayahCount, surahs, surahAyahs, onCycleStatus }: Props) {
   const { ayahs, loading: textLoading } = useQuranText(surahId);
   const { reviewAyah, getAyahStatus, getNextDue } = useAyahRevision(surahId);
+  const { explain, getExplanation, isLoading: isExplaining } = useAyahExplainer();
 
   const [reciter, setReciter] = useState(RECITERS[0].id);
   const [speed, setSpeed] = useState(1);
@@ -271,6 +274,16 @@ export default function QuranMemorizationMode({ surahId, ayahCount, surahs, sura
                   >
                     {isPlaying && !paused ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={() => explain(surahId, surahName, num, ayah.arabic)}
+                    disabled={isExplaining(surahId, num)}
+                    title="Explain this ayah"
+                  >
+                    {isExplaining(surahId, num) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  </Button>
                 </div>
 
                 {/* Text */}
@@ -308,6 +321,19 @@ export default function QuranMemorizationMode({ surahId, ayahCount, surahs, sura
                     <Button size="sm" className="h-7 text-xs flex-1" onClick={() => handleReview(num, 5)}>
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Easy
                     </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* AI Explanation */}
+              {getExplanation(surahId, num) && (
+                <div className="mt-2 p-3 rounded-md bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                    <span className="text-xs font-medium text-primary">AI Explanation</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground prose prose-sm max-w-none [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_p]:text-xs [&_li]:text-xs [&_strong]:text-foreground">
+                    <ReactMarkdown>{getExplanation(surahId, num)!}</ReactMarkdown>
                   </div>
                 </div>
               )}

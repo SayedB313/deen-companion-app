@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      accountability_partners: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          partner_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code: string
+          partner_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          partner_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           achieved_at: string
@@ -725,6 +752,45 @@ export type Database = {
           name?: string
           progress_percent?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_snapshots: {
+        Row: {
+          created_at: string
+          deen_minutes: number
+          dhikr_completed: number
+          fasting_days: number
+          id: string
+          prayers_logged: number
+          quran_ayahs_reviewed: number
+          streak_days: number
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          deen_minutes?: number
+          dhikr_completed?: number
+          fasting_days?: number
+          id?: string
+          prayers_logged?: number
+          quran_ayahs_reviewed?: number
+          streak_days?: number
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          deen_minutes?: number
+          dhikr_completed?: number
+          fasting_days?: number
+          id?: string
+          prayers_logged?: number
+          quran_ayahs_reviewed?: number
+          streak_days?: number
+          user_id?: string
+          week_start?: string
         }
         Relationships: []
       }
