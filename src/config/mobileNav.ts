@@ -1,7 +1,7 @@
 import {
   LayoutDashboard,
   BookOpen,
-  Hand,
+  Fingerprint,
   MessageCircle,
   GraduationCap,
   UtensilsCrossed,
@@ -29,7 +29,7 @@ export type NavTab = {
 export const primaryTabs: NavTab[] = [
   { label: "Home", i18nKey: "nav.home", icon: LayoutDashboard, path: "/" },
   { label: "Qur'an", i18nKey: "nav.quran", icon: BookOpen, path: "/quran" },
-  { label: "Dhikr", i18nKey: "nav.dhikr", icon: Hand, path: "/dhikr" },
+  { label: "Dhikr", i18nKey: "nav.dhikr", icon: Fingerprint, path: "/dhikr" },
   { label: "Coach", i18nKey: "nav.coach", icon: MessageCircle, path: "/coach" },
 ];
 

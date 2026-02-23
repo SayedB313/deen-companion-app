@@ -7,7 +7,7 @@ import {
   Target,
   MessageCircle,
   LogOut,
-  Hand,
+  Fingerprint,
   Settings,
   BarChart3,
   BookHeart,
@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 const mainNav = [
   { titleKey: "nav.home", url: "/", icon: LayoutDashboard },
   { titleKey: "nav.quran", url: "/quran", icon: BookOpen },
-  { titleKey: "nav.dhikr", url: "/dhikr", icon: Hand },
+  { titleKey: "nav.dhikr", url: "/dhikr", icon: Fingerprint },
   { titleKey: "nav.duas", url: "/duas", icon: BookHeart },
   { titleKey: "nav.knowledge", url: "/knowledge", icon: GraduationCap },
   { titleKey: "nav.fasting", url: "/fasting", icon: UtensilsCrossed },
