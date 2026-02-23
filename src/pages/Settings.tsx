@@ -349,6 +349,40 @@ const Settings = () => {
         </CardContent>
       </Card>
 
+      {/* Support & Feedback */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="h-4 w-4" /> Help & Feedback
+          </CardTitle>
+          <CardDescription>Get help or suggest new features</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={() => {
+                window.open("mailto:support@deentracker.app?subject=Support%20Request", "_blank");
+                toast({ title: "Opening email client…" });
+              }}
+            >
+              <Mail className="h-4 w-4" /> Contact Support
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={() => {
+                window.open("mailto:support@deentracker.app?subject=Feature%20Request&body=Hi%2C%20I%27d%20love%20to%20see%20the%20following%20feature%3A%0A%0A", "_blank");
+                toast({ title: "Opening email client…" });
+              }}
+            >
+              <FileText className="h-4 w-4" /> Request a Feature
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Danger Zone */}
       <Card className="border-destructive/50">
         <CardHeader>

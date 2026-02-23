@@ -111,7 +111,7 @@ const DuasPage = () => {
   const activeCat = duaCategories.find((c) => c.id === activeCategory);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Duas & Adhkar</h1>
@@ -152,7 +152,7 @@ const DuasPage = () => {
 
       {/* Category pills — hidden when searching or showing favorites */}
       {!search.trim() && !showFavoritesOnly && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide max-w-full">
           {duaCategories.map((cat) => (
             <button
               key={cat.id}
