@@ -37,6 +37,6 @@ export const moreTabs: NavTab[] = [
   { label: "Knowledge", icon: GraduationCap, path: "/knowledge" },
   { label: "Fasting", icon: UtensilsCrossed, path: "/fasting" },
   { label: "Time Tracker", icon: Clock, path: "/time" },
-  { label: "Character", icon: Heart, path: "/character" },
+  { label: "Goals", icon: Heart, path: "/character" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];

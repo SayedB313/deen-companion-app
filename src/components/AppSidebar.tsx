@@ -4,7 +4,7 @@ import {
   GraduationCap,
   UtensilsCrossed,
   Clock,
-  Heart,
+  Target,
   MessageCircle,
   LogOut,
   Hand,
@@ -31,7 +31,7 @@ const navItems = [
   { title: "Knowledge", url: "/knowledge", icon: GraduationCap },
   { title: "Fasting", url: "/fasting", icon: UtensilsCrossed },
   { title: "Time Tracker", url: "/time", icon: Clock },
-  { title: "Self-Accountability", url: "/character", icon: Heart },
+  { title: "Goals", url: "/character", icon: Target },
   { title: "AI Coach", url: "/coach", icon: MessageCircle },
   { title: "Settings", url: "/settings", icon: Settings },
 ];

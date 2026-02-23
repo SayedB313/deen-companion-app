@@ -126,7 +126,7 @@ const Dashboard = () => {
       </div>
 
       {/* Goals */}
-      <GoalsWidget />
+      <GoalsWidget compact />
 
       {/* Weekly Insights */}
       <WeeklyInsights />

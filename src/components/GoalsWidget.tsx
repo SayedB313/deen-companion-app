@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Target, Trash2 } from "lucide-react";
+import { Plus, Target, Trash2, ArrowRight } from "lucide-react";
 
 const goalAreas = [
   { value: "quran_ayahs", label: "Quran Ayahs", unit: "ayahs" },
@@ -15,10 +16,17 @@ const goalAreas = [
   { value: "fasts", label: "Fasts", unit: "days" },
   { value: "books_pages", label: "Book Pages", unit: "pages" },
   { value: "dhikr_sessions", label: "Dhikr Sessions", unit: "sessions" },
+  { value: "virtues_practiced", label: "Virtues Practiced", unit: "times" },
+  { value: "habits_avoided", label: "Habits Avoided", unit: "days" },
 ];
 
-const GoalsWidget = () => {
+interface GoalsWidgetProps {
+  compact?: boolean;
+}
+
+const GoalsWidget = ({ compact = false }: GoalsWidgetProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [goals, setGoals] = useState<any[]>([]);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [open, setOpen] = useState(false);
@@ -29,7 +37,6 @@ const GoalsWidget = () => {
     const { data } = await supabase.from("goals").select("*").eq("user_id", user.id).eq("is_active", true);
     if (data) setGoals(data);
 
-    // Calculate progress for each goal area
     const today = new Date().toISOString().split("T")[0];
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -38,13 +45,28 @@ const GoalsWidget = () => {
     monthAgo.setDate(monthAgo.getDate() - 30);
     const monthStr = monthAgo.toISOString().split("T")[0];
 
-    const [quran, time, fasts, books, dhikr] = await Promise.all([
+    const [quran, time, fasts, books, dhikr, charLogs] = await Promise.all([
       supabase.from("quran_progress").select("status").eq("user_id", user.id).eq("status", "memorised"),
       supabase.from("time_logs").select("duration_minutes, date").eq("user_id", user.id).eq("is_deen", true),
       supabase.from("fasting_log").select("date").eq("user_id", user.id),
       supabase.from("books").select("pages_read").eq("user_id", user.id),
       supabase.from("dhikr_logs").select("count, target, date").eq("user_id", user.id),
+      supabase.from("character_logs").select("trait_type, date").eq("user_id", user.id),
     ]);
+
+    // Character-based counts
+    const virtuesByPeriod = {
+      daily: charLogs.data?.filter(c => c.trait_type === "virtue" && c.date === today).length ?? 0,
+      weekly: charLogs.data?.filter(c => c.trait_type === "virtue" && c.date >= weekStr).length ?? 0,
+      monthly: charLogs.data?.filter(c => c.trait_type === "virtue" && c.date >= monthStr).length ?? 0,
+    };
+    // For "habits avoided" we count days WITHOUT a habit log — simplified: count habit logs (lower is better, but for goal progress we invert)
+    // Actually let's keep it simple: count the habit_to_reduce logs as "times caught" and let user set target as max
+    const habitsByPeriod = {
+      daily: charLogs.data?.filter(c => c.trait_type === "habit_to_reduce" && c.date === today).length ?? 0,
+      weekly: charLogs.data?.filter(c => c.trait_type === "habit_to_reduce" && c.date >= weekStr).length ?? 0,
+      monthly: charLogs.data?.filter(c => c.trait_type === "habit_to_reduce" && c.date >= monthStr).length ?? 0,
+    };
 
     const prog: Record<string, Record<string, number>> = {
       quran_ayahs: {
@@ -72,6 +94,8 @@ const GoalsWidget = () => {
         weekly: dhikr.data?.filter(d => d.date >= weekStr && d.count >= d.target).length ?? 0,
         monthly: dhikr.data?.filter(d => d.date >= monthStr && d.count >= d.target).length ?? 0,
       },
+      virtues_practiced: virtuesByPeriod,
+      habits_avoided: habitsByPeriod,
     };
 
     const flatProg: Record<string, number> = {};
@@ -95,7 +119,26 @@ const GoalsWidget = () => {
     load();
   };
 
-  if (goals.length === 0 && !open) {
+  const displayGoals = compact ? goals.slice(0, 3) : goals;
+
+  // Compact empty state
+  if (compact && goals.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Target className="h-4 w-4" /> No goals set yet
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate("/character")}>
+            Set Goals <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Full empty state (on the Goals & Accountability page)
+  if (!compact && goals.length === 0 && !open) {
     return (
       <Card>
         <CardContent className="py-4 flex items-center justify-between">
@@ -108,22 +151,7 @@ const GoalsWidget = () => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Set a Goal</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <Select value={form.area} onValueChange={v => setForm({ ...form, area: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{goalAreas.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
-                </Select>
-                <Input type="number" value={form.target_value} onChange={e => setForm({ ...form, target_value: parseInt(e.target.value) || 1 })} />
-                <Select value={form.period} onValueChange={v => setForm({ ...form, period: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button onClick={addGoal} className="w-full">Save Goal</Button>
-              </div>
+              <GoalForm form={form} setForm={setForm} onSave={addGoal} />
             </DialogContent>
           </Dialog>
         </CardContent>
@@ -137,33 +165,24 @@ const GoalsWidget = () => {
         <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
           <Target className="h-4 w-4" /> Goals
         </CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="ghost"><Plus className="h-4 w-4" /></Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Set a Goal</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <Select value={form.area} onValueChange={v => setForm({ ...form, area: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{goalAreas.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
-              </Select>
-              <Input type="number" value={form.target_value} onChange={e => setForm({ ...form, target_value: parseInt(e.target.value) || 1 })} />
-              <Select value={form.period} onValueChange={v => setForm({ ...form, period: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={addGoal} className="w-full">Save Goal</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {compact ? (
+          <Button size="sm" variant="ghost" onClick={() => navigate("/character")} className="text-xs">
+            View All <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        ) : (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="ghost"><Plus className="h-4 w-4" /></Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Set a Goal</DialogTitle></DialogHeader>
+              <GoalForm form={form} setForm={setForm} onSave={addGoal} />
+            </DialogContent>
+          </Dialog>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {goals.map(goal => {
+        {displayGoals.map(goal => {
           const area = goalAreas.find(a => a.value === goal.area);
           const current = progress[goal.id] ?? 0;
           const pct = Math.min(100, Math.round((current / goal.target_value) * 100));
@@ -173,18 +192,44 @@ const GoalsWidget = () => {
                 <span>{area?.label} ({goal.period})</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">{current}/{goal.target_value} {area?.unit}</span>
-                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => deleteGoal(goal.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  {!compact && (
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => deleteGoal(goal.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <Progress value={pct} className="h-2" />
             </div>
           );
         })}
+        {compact && goals.length > 3 && (
+          <p className="text-xs text-muted-foreground text-center">+{goals.length - 3} more goals</p>
+        )}
       </CardContent>
     </Card>
   );
 };
+
+function GoalForm({ form, setForm, onSave }: { form: any; setForm: any; onSave: () => void }) {
+  return (
+    <div className="space-y-3">
+      <Select value={form.area} onValueChange={v => setForm({ ...form, area: v })}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>{goalAreas.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}</SelectContent>
+      </Select>
+      <Input type="number" value={form.target_value} onChange={e => setForm({ ...form, target_value: parseInt(e.target.value) || 1 })} />
+      <Select value={form.period} onValueChange={v => setForm({ ...form, period: v })}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="daily">Daily</SelectItem>
+          <SelectItem value="weekly">Weekly</SelectItem>
+          <SelectItem value="monthly">Monthly</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button onClick={onSave} className="w-full">Save Goal</Button>
+    </div>
+  );
+}
 
 export default GoalsWidget;
