@@ -125,7 +125,7 @@ const Quran = () => {
   });
 
   return (
-    <div className="space-y-6 overflow-x-hidden">
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
       <div>
         <h1 className="text-2xl font-bold">Qur'an</h1>
         <p className="text-muted-foreground">{totalMemorised} / 6,236 ayahs memorised</p>
@@ -135,8 +135,8 @@ const Quran = () => {
       <RevisionScheduler surahsWithProgress={surahsWithProgress} onReviewSurah={handleReviewSurah} />
 
       {/* Search & Filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[180px]">
+      <div className="flex flex-col gap-2">
+        <div className="relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search surah..."
@@ -145,7 +145,7 @@ const Quran = () => {
             className="pl-9 h-9"
           />
         </div>
-        <div className="flex gap-1 overflow-x-auto max-w-full">
+        <div className="flex gap-1 overflow-x-auto w-full scrollbar-none">
           <button
             onClick={() => setJuzFilter(null)}
             className={`text-xs px-2.5 py-1 rounded-full shrink-0 transition-colors ${
