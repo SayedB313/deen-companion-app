@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, UserPlus, Search, Flame, BookOpen, Moon as MoonIcon,
   Clock, UtensilsCrossed, Loader2, Copy, Send, CheckCircle2, UserMinus,
-  Check, X, Sparkles,
+  Check, X, Sparkles, GraduationCap, MapPin, Lock,
 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -475,6 +475,50 @@ export default function Community() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Separator />
+
+      {/* Coming Soon: Skool Community */}
+      <Card className="opacity-60 pointer-events-none select-none">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" /> Skool Community
+            <Badge variant="secondary" className="ml-auto text-[10px]">
+              <Lock className="h-2.5 w-2.5 mr-1" /> Coming Soon
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Join our free Skool community — courses, discussions, and live events with fellow Muslims on the path of growth.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button disabled variant="outline" className="gap-2">
+            <GraduationCap className="h-4 w-4" /> Join Free Community
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Coming Soon: Local Masjid Events */}
+      <Card className="opacity-60 pointer-events-none select-none">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MapPin className="h-4 w-4" /> Local Masjid Events
+            <Badge variant="secondary" className="ml-auto text-[10px]">
+              <Lock className="h-2.5 w-2.5 mr-1" /> Coming Soon
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Subscribe to your local masjid's events — Jumu'ah programs, classes, iftars, and more. Masjids can connect via our API to publish their schedules directly to their community.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex gap-2">
+            <Button disabled variant="outline" size="sm">Browse Masjids</Button>
+            <Button disabled variant="outline" size="sm">My Subscriptions</Button>
+          </div>
+          <p className="text-xs text-muted-foreground">Filter by event type: Classes · Jumu'ah · Iftars · Youth · Sisters · Community</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

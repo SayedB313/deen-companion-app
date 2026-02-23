@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
   Download, FileJson, FileText, User, Lock, Mail,
-  Trash2, AlertTriangle, Loader2, Save,
+  Trash2, AlertTriangle, Loader2, Save, Globe,
 } from "lucide-react";
 import NotificationSettings from "@/components/NotificationSettings";
 import PartnerSettings from "@/components/PartnerSettings";
@@ -379,6 +380,26 @@ const Settings = () => {
             >
               <FileText className="h-4 w-4" /> Request a Feature
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Coming Soon: Multi-Lingual */}
+      <Card className="opacity-60 pointer-events-none select-none">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Globe className="h-4 w-4" /> Language / اللغة
+            <Badge variant="secondary" className="ml-auto text-[10px]">
+              <Lock className="h-2.5 w-2.5 mr-1" /> Coming Soon
+            </Badge>
+          </CardTitle>
+          <CardDescription>Switch the app to your preferred language</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {["العربية", "English", "Español", "Français", "Русский", "اردو", "Türkçe", "Bahasa Melayu"].map(lang => (
+              <Badge key={lang} variant="outline" className="text-xs py-1 px-2.5">{lang}</Badge>
+            ))}
           </div>
         </CardContent>
       </Card>
