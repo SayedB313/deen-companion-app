@@ -10,6 +10,9 @@ import {
   Hand,
   Settings,
   BarChart3,
+  BookHeart,
+  Compass,
+  Share2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +21,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -25,14 +29,20 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
+const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Qur'an", url: "/quran", icon: BookOpen },
   { title: "Dhikr", url: "/dhikr", icon: Hand },
+  { title: "Duas & Adhkar", url: "/duas", icon: BookHeart },
   { title: "Knowledge", url: "/knowledge", icon: GraduationCap },
   { title: "Fasting", url: "/fasting", icon: UtensilsCrossed },
   { title: "Time Tracker", url: "/time", icon: Clock },
   { title: "Goals", url: "/character", icon: Target },
+];
+
+const toolsNav = [
+  { title: "Qibla Compass", url: "/qibla", icon: Compass },
+  { title: "Share Progress", url: "/share", icon: Share2 },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "AI Coach", url: "/coach", icon: MessageCircle },
   { title: "Settings", url: "/settings", icon: Settings },
@@ -40,6 +50,23 @@ const navItems = [
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
+
+  const renderItems = (items: typeof mainNav) =>
+    items.map((item) => (
+      <SidebarMenuItem key={item.title}>
+        <SidebarMenuButton asChild>
+          <NavLink
+            to={item.url}
+            end={item.url === "/"}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+            activeClassName="bg-sidebar-accent text-primary font-medium"
+          >
+            <item.icon className="h-4 w-4" />
+            <span>{item.title}</span>
+          </NavLink>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    ));
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -52,24 +79,19 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2 py-3">
         <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1">
+            Track
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            <SidebarMenu>{renderItems(mainNav)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1 mt-2">
+            Tools
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderItems(toolsNav)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
