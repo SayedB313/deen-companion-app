@@ -11,6 +11,7 @@ import {
   Trash2, AlertTriangle, Loader2, Save,
 } from "lucide-react";
 import NotificationSettings from "@/components/NotificationSettings";
+import PartnerSettings from "@/components/PartnerSettings";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -295,6 +296,9 @@ const Settings = () => {
 
       {/* Notifications */}
       <NotificationSettings />
+
+      {/* Accountability Partner */}
+      <PartnerSettings />
 
       {/* Data Export */}
       <Card>

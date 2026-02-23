@@ -12,6 +12,7 @@ import GoalsWidget from "@/components/GoalsWidget";
 import StreakBadges from "@/components/StreakBadges";
 import InspirationCard from "@/components/InspirationCard";
 import WeeklyReportCard from "@/components/WeeklyReportCard";
+import PartnerCard from "@/components/PartnerCard";
 import { useStreaks } from "@/hooks/useStreaks";
 import { useDailyInspiration } from "@/hooks/useDailyInspiration";
 
@@ -151,6 +152,9 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Accountability Partner */}
+      <PartnerCard />
 
       {/* Achievements */}
       {streakData.achievements.length > 0 && (
