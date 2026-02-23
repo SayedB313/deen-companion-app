@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { RotateCcw, Check, Pencil, Check as CheckIcon, Flame, Plus, Trash2 } from "lucide-react";
+import { RotateCcw, Check, Pencil, Check as CheckIcon, Flame, Plus, Trash2, Play } from "lucide-react";
 import { useDhikrStreaks } from "@/hooks/useDhikrStreaks";
+import DhikrFocusMode from "@/components/DhikrFocusMode";
 
 const defaultDhikrs = [
   { type: "SubhanAllah", target: 33, arabic: "سبحان الله" },
@@ -40,6 +41,7 @@ const Dhikr = () => {
   const [newName, setNewName] = useState("");
   const [newArabic, setNewArabic] = useState("");
   const [newTarget, setNewTarget] = useState("33");
+  const [focusMode, setFocusMode] = useState<number | null>(null);
 
   // Load saved custom targets from localStorage
   useEffect(() => {
@@ -167,14 +169,33 @@ const Dhikr = () => {
     return (logs[d.type]?.count ?? 0) >= target;
   }).length;
 
+  const focusDhikrs = allDhikrs.map(d => ({
+    type: d.type,
+    arabic: d.arabic,
+    target: getTarget(d.type, d.target),
+    count: logs[d.type]?.count ?? 0,
+  }));
+
   return (
     <div className="space-y-6">
+      {focusMode !== null && (
+        <DhikrFocusMode
+          dhikrs={focusDhikrs}
+          startIndex={focusMode}
+          onTap={tap}
+          onReset={reset}
+          onClose={() => { setFocusMode(null); load(); }}
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Daily Dhikr</h1>
           <p className="text-muted-foreground">{totalCompleted}/{allDhikrs.length} completed today</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button onClick={() => setFocusMode(0)} className="gap-2" size="sm">
+            <Play className="h-4 w-4" /> Focus Mode
+          </Button>
           {streaks.currentStreak > 0 && (
             <div className="flex items-center gap-1.5 text-sm">
               <Flame className="h-4 w-4 text-warning" />
@@ -256,6 +277,17 @@ const Dhikr = () => {
                     onClick={() => tap(dhikr.type, target)}
                   >
                     Tap
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-14 w-14 md:h-14 md:w-14 max-md:h-16 max-md:w-16"
+                    onClick={() => {
+                      const idx = allDhikrs.findIndex(d => d.type === dhikr.type);
+                      setFocusMode(idx >= 0 ? idx : 0);
+                    }}
+                  >
+                    <Play className="h-4 w-4" />
                   </Button>
                   <Button
                     size="icon"
