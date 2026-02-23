@@ -1,72 +1,57 @@
 
-
-# AI Coach Sidebar -- Available Everywhere
+# Merge Goals into "Goals & Accountability" Hub
 
 ## Overview
-Add the AI Coach as a slide-out right panel on desktop and a floating chat button on mobile, so you can talk to it from any page without navigating away. The existing dedicated `/coach` page stays unchanged.
-
-The key bonus: **context awareness**. The AI will automatically know which page you're on and can tailor its responses accordingly (e.g., on the Dhikr page it can discuss your dhikr progress, on Quran it focuses on memorisation).
+Rename the current Self-Accountability (`/character`) page to **"Goals & Accountability"** and move the full Goals system there. The Dashboard keeps a compact, read-only summary that links to the full page. A new weekly reflection journal is added for end-of-week self-review.
 
 ## What Changes
 
-### 1. Shared Chat Hook (`src/hooks/useCoach.ts`)
-Extract all chat logic (messages, send, loading, history) from `Coach.tsx` into a reusable hook. Both the full page and the sidebar/drawer will use the same hook, sharing the same conversation.
+### 1. Rename & Restructure the `/character` Page
+- Page title becomes **"Goals & Accountability"**
+- Three tabbed sections: **Goals**, **Character** (virtues/habits), **Reflections**
+- The Goals tab contains the full GoalsWidget (add, edit, delete, progress bars) -- moved from the dashboard
+- The Character tab keeps the existing virtue/habit logging
+- The Reflections tab is a new weekly journal (simple text entries saved per week)
 
-The hook will accept an optional `pageContext` string (e.g., `"quran"`, `"dhikr"`, `"dashboard"`) that gets sent along with messages to the edge function.
+### 2. Dashboard Gets a Compact Goals Summary
+- Replace the current full `GoalsWidget` on the Dashboard with a slim read-only card
+- Shows top 3 active goals with progress bars, no add/delete controls
+- A "View All" link navigates to `/character` (the full Goals & Accountability page)
 
-### 2. Context-Aware AI
-Update the edge function to accept a `pageContext` field. When present, the system prompt will include a line like:
+### 3. New Goal Type: Character Goals
+- Add two new goal areas: **"Virtues practiced"** and **"Habits avoided"** (pulled from `character_logs` data)
+- This bridges the character tracking with the goals system so traits become measurable targets (e.g., "Practice patience 3x this week")
 
-> "The user is currently viewing their **Quran** page. Prioritise advice related to this area when relevant."
+### 4. Weekly Reflection Journal
+- Simple form: a text area to write a few sentences about your week
+- Stored in a new `reflections` table (user_id, week_start, content, created_at)
+- Past reflections viewable in a scrollable list
+- Quick prompts like "What am I grateful for?" and "What can I improve?"
 
-This means when you open the coach from the Dhikr page, it naturally focuses on dhikr topics without you needing to explain.
-
-### 3. Desktop: Right Sidebar Panel (`src/components/CoachPanel.tsx`)
-- A slide-out panel on the right side (~380px wide), toggled by a button in the top header bar
-- Uses a Sheet (side="right") so it overlays content rather than squishing it
-- Contains the same chat UI as the full page but in a compact format
-- Close button to dismiss, or click the toggle again
-- The panel knows which route you're on and passes it as context
-
-### 4. Mobile: Floating Chat Button + Drawer
-- A floating action button (FAB) with a chat icon, positioned above the bottom nav bar
-- Tapping it opens a full-screen Drawer (bottom sheet) with the chat interface
-- Same shared hook, same context awareness
-- The FAB is hidden when you're already on the `/coach` page (no double UI)
-
-### 5. Layout Integration
-- `AppLayout.tsx` gets the coach toggle button in the header and the CoachPanel/FAB
-- Uses `useLocation()` to determine current page context automatically
-- A simple mapping object converts routes to human-readable context names
+### 5. Navigation Updates
+- Sidebar: rename "Self-Accountability" to "Goals"
+- Mobile nav: update the label in `mobileNav.ts` from "Character" to "Goals"
+- Icon stays as Heart (or switch to Target -- both work)
 
 ## What Stays the Same
-- The `/coach` page remains as a dedicated full-screen experience
-- All existing navigation (sidebar, bottom nav) is untouched
-- Chat history is shared -- messages sent from the panel appear on the full page and vice versa
+- The `/character` route stays the same (no URL change needed)
+- All existing character logging (virtues, habits) works identically inside the Character tab
+- Dashboard still shows goal progress, just in a slimmer format
 
 ## Technical Details
 
-**New files:**
-- `src/hooks/useCoach.ts` -- shared chat state and send logic (extracted from Coach.tsx)
-- `src/components/CoachPanel.tsx` -- the right sidebar chat panel (desktop Sheet + mobile Drawer)
+**New database table:**
+- `reflections` -- columns: `id` (uuid), `user_id` (uuid, FK), `week_start` (date), `content` (text), `created_at` (timestamptz). RLS: users can only read/write their own rows.
 
-**Modified files:**
-- `src/pages/Coach.tsx` -- refactored to use `useCoach` hook instead of inline logic
-- `src/components/AppLayout.tsx` -- add coach toggle button in header, render CoachPanel, add FAB on mobile
-- `supabase/functions/deen-coach/index.ts` -- accept optional `pageContext` field, add context line to system prompt
+**Files to modify:**
+- `src/pages/Character.tsx` -- restructure into 3-tab layout (Goals, Character, Reflections), embed GoalsWidget fully
+- `src/components/GoalsWidget.tsx` -- add `compact` prop; when true, shows read-only top-3 with "View All" link; add "virtues_practiced" and "habits_avoided" goal areas
+- `src/pages/Index.tsx` -- pass `compact` prop to GoalsWidget
+- `src/components/AppSidebar.tsx` -- rename "Self-Accountability" to "Goals"
+- `src/config/mobileNav.ts` -- rename "Character" to "Goals"
 
-**Route-to-context mapping (in AppLayout or a small util):**
+**New file:**
+- `src/components/WeeklyReflection.tsx` -- the reflection journal component used inside the Reflections tab
 
-```text
-/         -> "Dashboard (overview of all progress)"
-/quran    -> "Qur'an memorisation and revision"
-/dhikr    -> "Daily dhikr and remembrance"
-/knowledge -> "Islamic knowledge, books, and courses"
-/fasting  -> "Fasting tracker"
-/time     -> "Time management and productivity"
-/character -> "Self-accountability and character development"
-/settings -> "App settings"
-```
-
-**No new dependencies required.**
-
+**New migration:**
+- Create `reflections` table with RLS policies
