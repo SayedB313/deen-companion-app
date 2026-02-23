@@ -41,7 +41,7 @@ export const moreTabs: NavTab[] = [
   { label: "Knowledge", icon: GraduationCap, path: "/knowledge" },
   { label: "Fasting", icon: UtensilsCrossed, path: "/fasting" },
   { label: "Time Tracker", icon: Clock, path: "/time" },
-  { label: "Goals", icon: Heart, path: "/character" },
+  { label: "My Growth", icon: Heart, path: "/character" },
   { label: "Qibla Compass", icon: Compass, path: "/qibla" },
   { label: "Share Progress", icon: Share2, path: "/share" },
   { label: "Reports", icon: BarChart3, path: "/reports" },

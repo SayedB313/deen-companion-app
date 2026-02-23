@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Heart, ShieldAlert, TrendingUp, Target, BookOpen } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Heart, ShieldAlert, TrendingUp, TrendingDown, Minus,
+  ChevronDown, Sparkles,
+} from "lucide-react";
 import GoalsWidget from "@/components/GoalsWidget";
 import WeeklyReflection from "@/components/WeeklyReflection";
 
@@ -17,143 +18,183 @@ const commonHabits = ["Backbiting", "Anger", "Laziness", "Arrogance", "Envy", "W
 const Character = () => {
   const { user } = useAuth();
   const [logs, setLogs] = useState<any[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ trait: "", trait_type: "virtue" as "virtue" | "habit_to_reduce", notes: "" });
+  const [logOpen, setLogOpen] = useState(false);
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase.from("character_logs").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(100);
+    const { data } = await supabase.from("character_logs").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(200);
     if (data) setLogs(data);
   };
 
   useEffect(() => { load(); }, [user]);
 
-  const addLog = async () => {
-    if (!user || !form.trait) return;
-    await supabase.from("character_logs").insert({
-      user_id: user.id,
-      trait: form.trait,
-      trait_type: form.trait_type,
-      notes: form.notes || null,
-    });
+  const quickLog = async (trait: string, traitType: "virtue" | "habit_to_reduce") => {
+    if (!user) return;
+    await supabase.from("character_logs").insert({ user_id: user.id, trait, trait_type: traitType });
     await supabase.from("daily_logs").upsert(
       { user_id: user.id, date: new Date().toISOString().split("T")[0], logged: true },
       { onConflict: "user_id,date" }
     );
-    setForm({ trait: "", trait_type: "virtue", notes: "" });
-    setShowAdd(false);
     load();
   };
 
-  const virtues = logs.filter((l) => l.trait_type === "virtue");
-  const habits = logs.filter((l) => l.trait_type === "habit_to_reduce");
+  /* ── stats ── */
+  const today = new Date().toISOString().split("T")[0];
+  const thisWeek = new Date(); thisWeek.setDate(thisWeek.getDate() - 7);
+  const thisWeekStr = thisWeek.toISOString().split("T")[0];
+  const lastWeek = new Date(); lastWeek.setDate(lastWeek.getDate() - 14);
+  const lastWeekStr = lastWeek.toISOString().split("T")[0];
 
-  const thisWeek = new Date();
-  thisWeek.setDate(thisWeek.getDate() - 7);
-  const weeklyVirtues = virtues.filter((v) => new Date(v.date) >= thisWeek);
-  const traitCounts: Record<string, number> = {};
-  weeklyVirtues.forEach((v) => {
-    traitCounts[v.trait] = (traitCounts[v.trait] || 0) + 1;
-  });
+  const virtuesThisWeek = logs.filter(l => l.trait_type === "virtue" && l.date >= thisWeekStr).length;
+  const virtuesLastWeek = logs.filter(l => l.trait_type === "virtue" && l.date >= lastWeekStr && l.date < thisWeekStr).length;
+  const habitsThisWeek = logs.filter(l => l.trait_type === "habit_to_reduce" && l.date >= thisWeekStr).length;
+  const habitsLastWeek = logs.filter(l => l.trait_type === "habit_to_reduce" && l.date >= lastWeekStr && l.date < thisWeekStr).length;
+
+  const virtuesTrend = virtuesThisWeek - virtuesLastWeek;
+  const habitsTrend = habitsThisWeek - habitsLastWeek;
+
+  /* ── weekly overview ── */
+  const goalsHit = 0; // computed inside GoalsWidget; for the hero we use a simpler proxy
+  const motivationalLine = useMemo(() => {
+    const total = virtuesThisWeek + habitsThisWeek;
+    if (total >= 10) return "Strong week so far, keep going! 💪";
+    if (total >= 5) return "Good momentum — stay consistent!";
+    if (total > 0) return "Every small step counts. Keep it up!";
+    return "Start logging to build your streak ✨";
+  }, [virtuesThisWeek, habitsThisWeek]);
+
+  function TrendIcon({ diff }: { diff: number }) {
+    if (diff > 0) return <TrendingUp className="h-3.5 w-3.5 text-success" />;
+    if (diff < 0) return <TrendingDown className="h-3.5 w-3.5 text-destructive" />;
+    return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* ── Page header ── */}
       <div>
-        <h1 className="text-2xl font-bold">Goals & Accountability</h1>
-        <p className="text-muted-foreground">Set goals, track character, and reflect on your week</p>
+        <h1 className="text-2xl font-bold">My Growth</h1>
+        <p className="text-muted-foreground text-sm">{motivationalLine}</p>
       </div>
 
-      <Tabs defaultValue="goals">
-        <TabsList>
-          <TabsTrigger value="goals"><Target className="h-4 w-4 mr-1" /> Goals</TabsTrigger>
-          <TabsTrigger value="character"><Heart className="h-4 w-4 mr-1" /> Character</TabsTrigger>
-          <TabsTrigger value="reflections"><BookOpen className="h-4 w-4 mr-1" /> Reflections</TabsTrigger>
-        </TabsList>
+      {/* ── Section 1: Weekly Overview ── */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="py-5">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-primary">{virtuesThisWeek}</p>
+              <p className="text-xs text-muted-foreground">Virtues logged</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary">{habitsThisWeek}</p>
+              <p className="text-xs text-muted-foreground">Habits tracked</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-primary">{virtuesThisWeek + habitsThisWeek}</p>
+              <p className="text-xs text-muted-foreground">Total entries</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="goals" className="space-y-4 mt-4">
-          <GoalsWidget />
-        </TabsContent>
+      {/* ── Section 2: Active Goals ── */}
+      <GoalsWidget />
 
-        <TabsContent value="character" className="space-y-4 mt-4">
-          <Button size="sm" onClick={() => setShowAdd(true)}><Plus className="h-4 w-4 mr-1" /> Log Entry</Button>
+      {/* ── Section 3: Character Tracker ── */}
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold">Character Tracker</h2>
 
-          {showAdd && (
-            <Card>
-              <CardContent className="pt-4 space-y-3">
-                <Tabs value={form.trait_type} onValueChange={(v) => setForm({ ...form, trait_type: v as any })}>
-                  <TabsList>
-                    <TabsTrigger value="virtue"><Heart className="h-4 w-4 mr-1" /> Virtue</TabsTrigger>
-                    <TabsTrigger value="habit_to_reduce"><ShieldAlert className="h-4 w-4 mr-1" /> Habit to Reduce</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <Input placeholder="Trait name" value={form.trait} onChange={(e) => setForm({ ...form, trait: e.target.value })} />
-                <div className="flex flex-wrap gap-1">
-                  {(form.trait_type === "virtue" ? commonVirtues : commonHabits).map((t) => (
-                    <Button key={t} size="sm" variant="outline" className="text-xs h-7" onClick={() => setForm({ ...form, trait: t })}>
-                      {t}
-                    </Button>
-                  ))}
+        {/* summary cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between mb-1">
+                <Heart className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-1 text-xs">
+                  <TrendIcon diff={virtuesTrend} />
+                  <span className="text-muted-foreground">{virtuesTrend >= 0 ? "+" : ""}{virtuesTrend} vs last wk</span>
                 </div>
-                <Textarea placeholder="Notes (optional, private)" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={addLog}>Save</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
+              </div>
+              <p className="text-xl font-bold">{virtuesThisWeek}</p>
+              <p className="text-xs text-muted-foreground">Virtues this week</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between mb-1">
+                <ShieldAlert className="h-4 w-4 text-warning" />
+                <div className="flex items-center gap-1 text-xs">
+                  <TrendIcon diff={habitsTrend} />
+                  <span className="text-muted-foreground">{habitsTrend >= 0 ? "+" : ""}{habitsTrend} vs last wk</span>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+              <p className="text-xl font-bold">{habitsThisWeek}</p>
+              <p className="text-xs text-muted-foreground">Habits tracked</p>
+            </CardContent>
+          </Card>
+        </div>
 
-          {Object.keys(traitCounts).length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4" /> This Week's Virtues</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-2">
-                {Object.entries(traitCounts).sort((a, b) => b[1] - a[1]).map(([trait, count]) => (
-                  <Badge key={trait} variant="secondary">{trait}: {count}x</Badge>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+        {/* quick-log chips */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Quick log a virtue:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {commonVirtues.map(v => (
+              <Button
+                key={v} size="sm" variant="outline"
+                className="text-xs h-7 rounded-full"
+                onClick={() => quickLog(v, "virtue")}
+              >
+                <Heart className="h-3 w-3 mr-1 text-primary" /> {v}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Quick log a habit to reduce:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {commonHabits.map(h => (
+              <Button
+                key={h} size="sm" variant="outline"
+                className="text-xs h-7 rounded-full"
+                onClick={() => quickLog(h, "habit_to_reduce")}
+              >
+                <ShieldAlert className="h-3 w-3 mr-1 text-warning" /> {h}
+              </Button>
+            ))}
+          </div>
+        </div>
 
-          <Tabs defaultValue="virtues">
-            <TabsList>
-              <TabsTrigger value="virtues">Virtues ({virtues.length})</TabsTrigger>
-              <TabsTrigger value="habits">Habits ({habits.length})</TabsTrigger>
-            </TabsList>
-            <TabsContent value="virtues" className="space-y-2">
-              {virtues.slice(0, 20).map((v) => (
-                <Card key={v.id}>
-                  <CardContent className="py-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{v.trait}</span>
-                      <span className="text-xs text-muted-foreground">{v.date}</span>
-                    </div>
-                    {v.notes && <p className="text-xs text-muted-foreground mt-1">{v.notes}</p>}
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-            <TabsContent value="habits" className="space-y-2">
-              {habits.slice(0, 20).map((h) => (
-                <Card key={h.id}>
-                  <CardContent className="py-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{h.trait}</span>
-                      <span className="text-xs text-muted-foreground">{h.date}</span>
-                    </div>
-                    {h.notes && <p className="text-xs text-muted-foreground mt-1">{h.notes}</p>}
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
+        {/* expandable log history */}
+        <Collapsible open={logOpen} onOpenChange={setLogOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1 text-xs w-full">
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${logOpen ? "rotate-180" : ""}`} />
+              {logOpen ? "Hide" : "View"} recent log ({logs.length} entries)
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-2 mt-2">
+            {logs.slice(0, 20).map(l => (
+              <Card key={l.id}>
+                <CardContent className="py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {l.trait_type === "virtue"
+                      ? <Heart className="h-3.5 w-3.5 text-primary" />
+                      : <ShieldAlert className="h-3.5 w-3.5 text-warning" />}
+                    <span className="text-sm">{l.trait}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{l.date}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
 
-        <TabsContent value="reflections" className="mt-4">
-          <WeeklyReflection />
-        </TabsContent>
-      </Tabs>
+      {/* ── Section 4: Weekly Reflection (inline) ── */}
+      <div className="space-y-2">
+        <h2 className="text-base font-semibold">Weekly Reflection</h2>
+        <WeeklyReflection />
+      </div>
     </div>
   );
 };

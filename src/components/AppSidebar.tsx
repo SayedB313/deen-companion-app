@@ -39,7 +39,7 @@ const mainNav = [
   { title: "Knowledge", url: "/knowledge", icon: GraduationCap },
   { title: "Fasting", url: "/fasting", icon: UtensilsCrossed },
   { title: "Time Tracker", url: "/time", icon: Clock },
-  { title: "Goals", url: "/character", icon: Target },
+  { title: "My Growth", url: "/character", icon: Target },
 ];
 
 const toolsNav = [
