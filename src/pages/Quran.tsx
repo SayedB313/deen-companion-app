@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Headphones, BookOpen } from "lucide-react";
+import { Headphones, BookOpen, BookText, Search } from "lucide-react";
 import RevisionScheduler from "@/components/RevisionScheduler";
 import QuranListeningMode from "@/components/QuranListeningMode";
 import QuranMemorizationMode from "@/components/QuranMemorizationMode";
+import QuranReadingMode from "@/components/QuranReadingMode";
 import { useAyahRevision } from "@/hooks/useAyahRevision";
 
 interface Surah {
@@ -25,14 +27,15 @@ interface AyahProgress {
   status: string;
 }
 
-
 const Quran = () => {
   const { user } = useAuth();
   const [surahs, setSurahs] = useState<Surah[]>([]);
   const [progress, setProgress] = useState<AyahProgress[]>([]);
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
-  const [defaultTab, setDefaultTab] = useState<"listening" | "memorization">("listening");
+  const [defaultTab, setDefaultTab] = useState<"reading" | "listening" | "memorization">("reading");
   const [surahAyahs, setSurahAyahs] = useState<Record<number, string>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [juzFilter, setJuzFilter] = useState<number | null>(null);
   const { getAyahStatus } = useAyahRevision(selectedSurah?.id ?? null);
 
   useEffect(() => {
@@ -75,7 +78,7 @@ const Quran = () => {
     };
   });
 
-  const openSurah = (surah: Surah, tab: "listening" | "memorization" = "listening") => {
+  const openSurah = (surah: Surah, tab: "reading" | "listening" | "memorization" = "reading") => {
     setSelectedSurah(surah);
     setDefaultTab(tab);
     const ayahMap: Record<number, string> = {};
@@ -109,15 +112,61 @@ const Quran = () => {
     });
   };
 
+  // Filtering
+  const uniqueJuz = [...new Set(surahs.map(s => s.juz_start))].sort((a, b) => a - b);
+  const filteredSurahs = surahs.filter(s => {
+    const matchSearch = !searchQuery ||
+      s.name_transliteration.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.name_english.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.name_arabic.includes(searchQuery) ||
+      String(s.id) === searchQuery;
+    const matchJuz = !juzFilter || s.juz_start === juzFilter;
+    return matchSearch && matchJuz;
+  });
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Qur'an Memorisation</h1>
+        <h1 className="text-2xl font-bold">Qur'an</h1>
         <p className="text-muted-foreground">{totalMemorised} / 6,236 ayahs memorised</p>
         <Progress value={(totalMemorised / 6236) * 100} className="mt-2 h-3 max-w-md" />
       </div>
 
       <RevisionScheduler surahsWithProgress={surahsWithProgress} onReviewSurah={handleReviewSurah} />
+
+      {/* Search & Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search surah..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9"
+          />
+        </div>
+        <div className="flex gap-1 overflow-x-auto">
+          <button
+            onClick={() => setJuzFilter(null)}
+            className={`text-xs px-2.5 py-1 rounded-full shrink-0 transition-colors ${
+              !juzFilter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+            }`}
+          >
+            All
+          </button>
+          {uniqueJuz.slice(0, 10).map(j => (
+            <button
+              key={j}
+              onClick={() => setJuzFilter(j === juzFilter ? null : j)}
+              className={`text-xs px-2.5 py-1 rounded-full shrink-0 transition-colors ${
+                juzFilter === j ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              Juz {j}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2 text-xs">
         {[
@@ -134,7 +183,7 @@ const Quran = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-        {surahs.map((surah) => {
+        {filteredSurahs.map((surah) => {
           const status = getSurahStatus(surah);
           const pct = getSurahPercent(surah);
           return (
@@ -165,12 +214,15 @@ const Quran = () => {
                   <span className="font-arabic text-xl">{selectedSurah.name_arabic}</span>
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground">
-                  {selectedSurah.ayah_count} ayahs
+                  {selectedSurah.ayah_count} ayahs · {selectedSurah.name_english}
                 </p>
               </DialogHeader>
 
               <Tabs defaultValue={defaultTab} key={selectedSurah.id + defaultTab} className="mt-2">
                 <TabsList className="w-full">
+                  <TabsTrigger value="reading" className="flex-1 gap-1.5">
+                    <BookText className="h-3.5 w-3.5" /> Reading
+                  </TabsTrigger>
                   <TabsTrigger value="listening" className="flex-1 gap-1.5">
                     <Headphones className="h-3.5 w-3.5" /> Listening
                   </TabsTrigger>
@@ -178,6 +230,16 @@ const Quran = () => {
                     <BookOpen className="h-3.5 w-3.5" /> Memorization
                   </TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="reading">
+                  <QuranReadingMode
+                    surahId={selectedSurah.id}
+                    surahName={selectedSurah.name_transliteration}
+                    ayahCount={selectedSurah.ayah_count}
+                    surahs={surahs}
+                    onChangeSurah={(s) => openSurah(s, "reading")}
+                  />
+                </TabsContent>
 
                 <TabsContent value="listening">
                   <QuranListeningMode
