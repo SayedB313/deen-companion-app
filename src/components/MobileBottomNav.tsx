@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -8,6 +9,7 @@ import { primaryTabs, moreTabs } from "@/config/mobileNav";
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isActive = (path: string) =>
@@ -31,7 +33,7 @@ export function MobileBottomNav() {
                 )}
               >
                 <tab.icon className="h-5 w-5" />
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <span className="text-[10px] font-medium">{t(tab.i18nKey)}</span>
               </button>
             );
           })}
@@ -43,7 +45,7 @@ export function MobileBottomNav() {
             )}
           >
             <MoreHorizontal className="h-5 w-5" />
-            <span className="text-[10px] font-medium">More</span>
+            <span className="text-[10px] font-medium">{t('common.more')}</span>
           </button>
         </div>
       </nav>
@@ -51,7 +53,7 @@ export function MobileBottomNav() {
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl pb-8">
           <SheetHeader>
-            <SheetTitle>More</SheetTitle>
+            <SheetTitle>{t('common.more')}</SheetTitle>
           </SheetHeader>
           <div className="grid grid-cols-3 gap-4 pt-4">
             {moreTabs.map((tab) => {
@@ -71,7 +73,7 @@ export function MobileBottomNav() {
                   )}
                 >
                   <tab.icon className="h-6 w-6" />
-                  <span className="text-xs font-medium">{tab.label}</span>
+                  <span className="text-xs font-medium">{t(tab.i18nKey)}</span>
                 </button>
               );
             })}

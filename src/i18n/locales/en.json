@@ -16,7 +16,8 @@
     "settings": "Settings",
     "track": "Track",
     "tools": "Tools",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "more": "More"
   },
   "app": {
     "name": "Deen Tracker"
@@ -51,7 +52,35 @@
     "ctaTitle": "Ready to transform your daily worship?",
     "ctaDesc": "Join thousands of Muslims using Deen Tracker to build consistency, track progress, and grow spiritually.",
     "ctaButton": "Get Started — It's Free",
-    "footerTagline": "Built with love for the ummah. Your data is private and encrypted."
+    "footerTagline": "Built with love for the ummah. Your data is private and encrypted.",
+    "quranMemorisation": "Qur'an Memorisation",
+    "quranMemorisationDesc": "Track every ayah with spaced repetition, reading mode with bookmarks, and AI explanations.",
+    "salahDhikr": "Salah & Dhikr",
+    "salahDhikrDesc": "Log prayers with on-time/late/missed tracking. Full-screen dhikr focus mode with haptic feedback.",
+    "deenTimeTracker": "Deen Time Tracker",
+    "deenTimeTrackerDesc": "Measure how much of your day goes to deen. Set goals and see weekly trends.",
+    "streaksMilestones": "Streaks & Milestones",
+    "streaksMilestonesDesc": "Build daily habits with streak counters, achievements, badges, and weekly insights.",
+    "accountability": "Accountability",
+    "accountabilityDesc": "Partners, circles, chat, and friendly competition. Compare weekly progress.",
+    "aiDeenCoach": "AI Deen Coach",
+    "aiDeenCoachDesc": "Get personalised guidance, tafsir, and daily motivation powered by Islamic AI.",
+    "faq1Q": "Is Deen Tracker free?",
+    "faq1A": "Yes! Core features are completely free. We believe in making Islamic tools accessible to everyone.",
+    "faq2Q": "Is my data private?",
+    "faq2A": "Absolutely. Your data is encrypted and stored securely. We never sell or share your personal information with third parties.",
+    "faq3Q": "Does it work offline?",
+    "faq3A": "Yes, Deen Tracker is a Progressive Web App (PWA). Key features like dhikr counting and prayer logging work offline and sync when you're back online.",
+    "faq4Q": "Can I use it on my phone?",
+    "faq4A": "Yes! Install it as a PWA on iOS or Android for a native app-like experience. No app store needed.",
+    "faq5Q": "How does the AI Coach work?",
+    "faq5A": "Our AI Coach is trained on authentic Islamic sources and provides personalised guidance based on your goals and progress. It's like having a knowledgeable friend available 24/7.",
+    "testimonial1Name": "Ahmed R.",
+    "testimonial1Text": "Deen Tracker transformed my Quran memorisation journey. The spaced repetition alone is worth it.",
+    "testimonial2Name": "Fatima K.",
+    "testimonial2Text": "Having an accountability partner keeps me consistent. I haven't missed Fajr in 3 months!",
+    "testimonial3Name": "Omar S.",
+    "testimonial3Text": "The AI Coach gives thoughtful, relevant advice. It's like having a knowledgeable friend always available."
   },
   "settings": {
     "title": "Settings",
@@ -102,7 +131,8 @@
     "comingSoon": "Coming Soon",
     "loading": "Loading…",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "more": "More"
   },
   "fasting": {
     "title": "Fasting & Ramadan",
