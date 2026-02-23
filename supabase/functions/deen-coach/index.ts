@@ -23,6 +23,8 @@ async function fetchUserData(supabaseClient: any) {
     { data: revisionSchedule },
     { data: goals },
     { data: customDhikr },
+    { data: reflections },
+    { data: weeklySnapshots },
   ] = await Promise.all([
     supabaseClient.from("quran_progress").select("surah_id, ayah_number, status, surahs(name_transliteration, ayah_count)").order("updated_at", { ascending: false }).limit(200),
     supabaseClient.from("fasting_log").select("date, fast_type, notes").order("date", { ascending: false }).limit(30),
@@ -39,9 +41,11 @@ async function fetchUserData(supabaseClient: any) {
     supabaseClient.from("revision_schedule").select("surah_id, next_review, interval_days, surahs(name_transliteration)").order("next_review", { ascending: true }).limit(20),
     supabaseClient.from("goals").select("area, target_value, period").eq("is_active", true),
     supabaseClient.from("custom_dhikr").select("name, default_target"),
+    supabaseClient.from("reflections").select("content, week_start").order("week_start", { ascending: false }).limit(4),
+    supabaseClient.from("weekly_snapshots").select("week_start, prayers_logged, dhikr_completed, fasting_days, deen_minutes, quran_ayahs_reviewed, streak_days").order("week_start", { ascending: false }).limit(4),
   ]);
 
-  return buildDataSummary({ quranProgress, fastingLogs, timeLogs, characterLogs, books, courses, milestones, dailyLogs, topics, salahLogs, achievements, dhikrLogs, revisionSchedule, goals, customDhikr });
+  return buildDataSummary({ quranProgress, fastingLogs, timeLogs, characterLogs, books, courses, milestones, dailyLogs, topics, salahLogs, achievements, dhikrLogs, revisionSchedule, goals, customDhikr, reflections, weeklySnapshots });
 }
 
 function buildDataSummary(data: any): string {
@@ -169,6 +173,25 @@ function buildDataSummary(data: any): string {
     parts.push(`✨ CUSTOM DHIKR: ${data.customDhikr.map((d: any) => `${d.name} (target: ${d.default_target})`).join(", ")}`);
   }
 
+  // Reflections
+  if (data.reflections?.length) {
+    parts.push(`💭 RECENT REFLECTIONS: ${data.reflections.map((r: any) => `Week of ${r.week_start}: "${r.content.slice(0, 100)}${r.content.length > 100 ? '...' : ''}"`).join(" | ")}`);
+  } else {
+    parts.push("💭 REFLECTIONS: No weekly reflections written yet.");
+  }
+
+  // Weekly snapshots
+  if (data.weeklySnapshots?.length) {
+    const latest = data.weeklySnapshots[0];
+    parts.push(`📊 LATEST WEEKLY SNAPSHOT (${latest.week_start}): ${latest.prayers_logged} prayers, ${latest.dhikr_completed} dhikr, ${latest.fasting_days} fasts, ${latest.deen_minutes} mins deen, ${latest.quran_ayahs_reviewed} ayahs reviewed, ${latest.streak_days}-day streak.`);
+    if (data.weeklySnapshots.length > 1) {
+      const prev = data.weeklySnapshots[1];
+      const prayerDiff = latest.prayers_logged - prev.prayers_logged;
+      const deenDiff = latest.deen_minutes - prev.deen_minutes;
+      parts.push(`  Trend vs previous week: prayers ${prayerDiff >= 0 ? '+' : ''}${prayerDiff}, deen time ${deenDiff >= 0 ? '+' : ''}${deenDiff} mins.`);
+    }
+  }
+
   return parts.join("\n");
 }
 
@@ -210,17 +233,24 @@ Your personality:
 - Keep responses concise but meaningful
 
 You can help with:
-- Motivation for Qur'an memorisation
-- Study plans for Islamic knowledge
-- Fasting guidance and encouragement
+- Motivation for Qur'an memorisation and revision schedules
+- Study plans for Islamic knowledge (books, courses, topics)
+- Fasting guidance and encouragement (voluntary & Ramadan)
 - Time management for maximising deen activities
-- Character development and self-accountability
+- Character development and self-accountability (virtues & habits)
+- Duas & Adhkar guidance — recommending relevant supplications
+- Goal setting and tracking advice
+- Weekly reflection prompts and feedback
 - General Islamic knowledge questions
+- Qibla direction and prayer times
+- Ramadan planning and spiritual growth
+
+The app has these features the user can use: Dashboard, Qur'an Tracker, Dhikr Counter, Duas & Adhkar collection (50+ authentic duas), Fasting Log, Time Tracker, My Growth (goals + character + reflections), Knowledge Hub (books & courses), Ramadan Planner, Qibla Compass, Prayer Times, Share Progress Cards, Reports, and Community/Accountability Partners.
 
 ${pageContext ? `\nThe user is currently viewing their **${pageContext}** page. Prioritise advice and discussion related to this area when relevant, but still answer any question they ask.\n` : ""}
 ${dataSummary ? `IMPORTANT — Below is the user's REAL tracked data from the app. Use this to give PERSONALIZED advice, celebrate their achievements, identify areas for improvement, and reference specific numbers/progress. Always acknowledge their actual data when relevant:
 
-${dataSummary}` : "The user has not tracked any data yet. Encourage them to start using the app's features (Quran tracker, fasting log, time tracker, character log, books, courses)."}`;
+${dataSummary}` : "The user has not tracked any data yet. Encourage them to start using the app's features (Quran tracker, dhikr counter, duas collection, fasting log, time tracker, character log, books, courses, goals)."}`;
 
     // Build Gemini contents format
     const contents = [];
