@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -31,31 +32,32 @@ import {
 import { Button } from "@/components/ui/button";
 
 const mainNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Qur'an", url: "/quran", icon: BookOpen },
-  { title: "Dhikr", url: "/dhikr", icon: Hand },
-  { title: "Duas & Adhkar", url: "/duas", icon: BookHeart },
-  { title: "Knowledge", url: "/knowledge", icon: GraduationCap },
-  { title: "Fasting & Ramadan", url: "/fasting", icon: UtensilsCrossed },
-  { title: "Time Tracker", url: "/time", icon: Clock },
-  { title: "My Growth", url: "/character", icon: Target },
+  { titleKey: "nav.home", url: "/", icon: LayoutDashboard },
+  { titleKey: "nav.quran", url: "/quran", icon: BookOpen },
+  { titleKey: "nav.dhikr", url: "/dhikr", icon: Hand },
+  { titleKey: "nav.duas", url: "/duas", icon: BookHeart },
+  { titleKey: "nav.knowledge", url: "/knowledge", icon: GraduationCap },
+  { titleKey: "nav.fasting", url: "/fasting", icon: UtensilsCrossed },
+  { titleKey: "nav.time", url: "/time", icon: Clock },
+  { titleKey: "nav.character", url: "/character", icon: Target },
 ];
 
 const toolsNav = [
-  { title: "Community", url: "/community", icon: Users },
-  { title: "Qibla Compass", url: "/qibla", icon: Compass },
-  { title: "Share Progress", url: "/share", icon: Share2 },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "AI Coach", url: "/coach", icon: MessageCircle },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { titleKey: "nav.community", url: "/community", icon: Users },
+  { titleKey: "nav.qibla", url: "/qibla", icon: Compass },
+  { titleKey: "nav.share", url: "/share", icon: Share2 },
+  { titleKey: "nav.reports", url: "/reports", icon: BarChart3 },
+  { titleKey: "nav.coach", url: "/coach", icon: MessageCircle },
+  { titleKey: "nav.settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
   const { signOut, user } = useAuth();
+  const { t } = useTranslation();
 
   const renderItems = (items: typeof mainNav) =>
     items.map((item) => (
-      <SidebarMenuItem key={item.title}>
+      <SidebarMenuItem key={item.titleKey}>
         <SidebarMenuButton asChild>
           <NavLink
             to={item.url}
@@ -64,7 +66,7 @@ export function AppSidebar() {
             activeClassName="bg-sidebar-accent text-primary font-medium"
           >
             <item.icon className="h-4 w-4" />
-            <span>{item.title}</span>
+            <span>{t(item.titleKey)}</span>
           </NavLink>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -76,13 +78,13 @@ export function AppSidebar() {
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
           <BookOpen className="h-5 w-5 text-primary-foreground" />
         </div>
-        <span className="text-lg font-semibold text-sidebar-foreground">Deen Tracker</span>
+        <span className="text-lg font-semibold text-sidebar-foreground">{t('app.name')}</span>
       </div>
 
       <SidebarContent className="px-2 py-3">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1">
-            Track
+            {t('nav.track')}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderItems(mainNav)}</SidebarMenu>
@@ -90,7 +92,7 @@ export function AppSidebar() {
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1 mt-2">
-            Tools
+            {t('nav.tools')}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderItems(toolsNav)}</SidebarMenu>
@@ -102,7 +104,7 @@ export function AppSidebar() {
         <p className="text-xs text-muted-foreground truncate mb-2">{user?.email}</p>
         <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={signOut}>
           <LogOut className="h-4 w-4" />
-          Sign Out
+          {t('nav.signOut')}
         </Button>
       </SidebarFooter>
     </Sidebar>

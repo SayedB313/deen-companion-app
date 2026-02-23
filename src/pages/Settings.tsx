@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,7 @@ const tables = [
 const Settings = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  
+  const { t, i18n } = useTranslation();
 
   // Profile state
   const [displayName, setDisplayName] = useState("");
@@ -384,23 +386,27 @@ const Settings = () => {
         </CardContent>
       </Card>
 
-      {/* Coming Soon: Multi-Lingual */}
-      <Card className="opacity-60 pointer-events-none select-none">
+      {/* Language Selector */}
+      <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Globe className="h-4 w-4" /> Language / اللغة
-            <Badge variant="secondary" className="ml-auto text-[10px]">
-              <Lock className="h-2.5 w-2.5 mr-1" /> Coming Soon
-            </Badge>
+            <Globe className="h-4 w-4" /> {t('settings.language')}
           </CardTitle>
-          <CardDescription>Switch the app to your preferred language</CardDescription>
+          <CardDescription>{t('settings.languageDesc')}</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {["العربية", "English", "Español", "Français", "Русский", "اردو", "Türkçe", "Bahasa Melayu"].map(lang => (
-              <Badge key={lang} variant="outline" className="text-xs py-1 px-2.5">{lang}</Badge>
-            ))}
-          </div>
+        <CardContent className="space-y-3">
+          <Select value={i18n.language} onValueChange={(lng) => i18n.changeLanguage(lng)}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_LANGUAGES.map(lang => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  {lang.nativeLabel} — {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 

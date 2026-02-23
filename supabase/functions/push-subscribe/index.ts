@@ -27,13 +27,27 @@ serve(async (req) => {
       });
     }
 
-    const { subscription } = await req.json();
-    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
-      return new Response(JSON.stringify({ error: "Invalid subscription" }), {
+    const rawBody = await req.json();
+
+    // Validate input with Zod
+    const { z } = await import("https://deno.land/x/zod@v3.23.8/mod.ts");
+    const subscriptionSchema = z.object({
+      subscription: z.object({
+        endpoint: z.string().url().max(2000),
+        keys: z.object({
+          p256dh: z.string().min(1).max(500),
+          auth: z.string().min(1).max(500),
+        }),
+      }),
+    });
+    const parsed = subscriptionSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: "Invalid subscription", details: parsed.error.flatten() }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const { subscription } = parsed.data;
 
     const { error } = await supabase.from("push_subscriptions").upsert(
       {

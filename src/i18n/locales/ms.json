@@ -1,0 +1,32 @@
+{
+  "nav": {
+    "home": "Papan Pemuka",
+    "quran": "Al-Quran",
+    "dhikr": "Zikir",
+    "duas": "Doa & Azkar",
+    "knowledge": "Ilmu",
+    "fasting": "Puasa & Ramadan",
+    "time": "Penjejak Masa",
+    "character": "Perkembangan Saya",
+    "community": "Komuniti",
+    "qibla": "Kompas Kiblat",
+    "share": "Kongsi Kemajuan",
+    "reports": "Laporan",
+    "coach": "Jurulatih AI",
+    "settings": "Tetapan",
+    "track": "Penjejakan",
+    "tools": "Alatan",
+    "signOut": "Log Keluar"
+  },
+  "app": {
+    "name": "Deen Tracker"
+  },
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "comingSoon": "Akan Datang",
+    "loading": "Memuatkan…",
+    "error": "Ralat",
+    "success": "Berjaya"
+  }
+}
