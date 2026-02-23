@@ -65,13 +65,19 @@ const Quran = () => {
 
   const totalMemorised = progress.filter((p) => p.status === "memorised").length;
 
-  // Get fully memorised surah IDs for revision scheduler
-  const memorisedSurahIds = surahs
-    .filter((surah) => {
-      const memorised = progress.filter((p) => p.surah_id === surah.id && p.status === "memorised").length;
-      return memorised === surah.ayah_count && surah.ayah_count > 0;
-    })
-    .map((s) => s.id);
+  // Build per-surah progress data for revision scheduler
+  const surahsWithProgress = surahs.map((surah) => {
+    const surahProgress = progress.filter((p) => p.surah_id === surah.id);
+    return {
+      id: surah.id,
+      name_arabic: surah.name_arabic,
+      name_transliteration: surah.name_transliteration,
+      ayah_count: surah.ayah_count,
+      memorised_count: surahProgress.filter((p) => p.status === "memorised").length,
+      needs_review_count: surahProgress.filter((p) => p.status === "needs_review").length,
+      in_progress_count: surahProgress.filter((p) => p.status === "in_progress").length,
+    };
+  });
 
   const openSurah = (surah: Surah) => {
     setSelectedSurah(surah);
@@ -146,7 +152,7 @@ const Quran = () => {
       </div>
 
       {/* Revision Scheduler */}
-      <RevisionScheduler surahs={surahs} memorisedSurahIds={memorisedSurahIds} />
+      <RevisionScheduler surahsWithProgress={surahsWithProgress} />
 
       <div className="flex flex-wrap gap-2 text-xs">
         {[
