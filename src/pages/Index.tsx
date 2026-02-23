@@ -9,13 +9,14 @@ import DashboardCharts from "@/components/DashboardCharts";
 import WeeklyInsights from "@/components/WeeklyInsights";
 import GoalsWidget from "@/components/GoalsWidget";
 import StreakBadges from "@/components/StreakBadges";
+import InspirationCard from "@/components/InspirationCard";
 import { useStreaks } from "@/hooks/useStreaks";
-import { getDailyInspiration } from "@/data/dailyInspiration";
+import { useDailyInspiration } from "@/hooks/useDailyInspiration";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const streakData = useStreaks();
-  const inspiration = getDailyInspiration();
+  const { inspiration, loading: inspirationLoading } = useDailyInspiration();
   const [displayName, setDisplayName] = useState("");
   const [stats, setStats] = useState({
     totalAyahs: 0,
@@ -82,12 +83,7 @@ const Dashboard = () => {
       </div>
 
       {/* Daily Inspiration */}
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="py-4">
-          <p className="text-sm italic">"{inspiration.text}"</p>
-          <p className="text-xs text-muted-foreground mt-1">— {inspiration.source}</p>
-        </CardContent>
-      </Card>
+      <InspirationCard text={inspiration.text} source={inspiration.source} loading={inspirationLoading} />
 
       {/* Prayer Times + Salah Tracker */}
       <PrayerTimes />
