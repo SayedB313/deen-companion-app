@@ -15,9 +15,15 @@ export const PAGE_CONTEXT_MAP: Record<string, string> = {
   "/knowledge": "Islamic knowledge, books, and courses",
   "/fasting": "Fasting tracker",
   "/time": "Time management and productivity",
-  "/character": "Self-accountability and character development",
+  "/character": "My Growth — goals, character development, and weekly reflections",
   "/settings": "App settings",
   "/coach": "AI Coach (dedicated page)",
+  "/duas": "Duas & Adhkar — supplications and daily remembrance",
+  "/ramadan": "Ramadan tracker and planner",
+  "/qibla": "Qibla compass direction finder",
+  "/share": "Share progress cards with others",
+  "/reports": "Weekly and monthly progress reports",
+  "/community": "Community and accountability partners",
 };
 
 export function useCoach(pageContext?: string) {
