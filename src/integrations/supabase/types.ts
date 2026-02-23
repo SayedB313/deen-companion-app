@@ -169,6 +169,33 @@ export type Database = {
           },
         ]
       }
+      custom_dhikr: {
+        Row: {
+          arabic: string | null
+          created_at: string
+          default_target: number
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          arabic?: string | null
+          created_at?: string
+          default_target?: number
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          arabic?: string | null
+          created_at?: string
+          default_target?: number
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_logs: {
         Row: {
           created_at: string
@@ -431,6 +458,47 @@ export type Database = {
           week_start?: string
         }
         Relationships: []
+      }
+      revision_schedule: {
+        Row: {
+          created_at: string
+          ease_factor: number
+          id: string
+          interval_days: number
+          last_reviewed: string
+          next_review: string
+          surah_id: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string
+          next_review?: string
+          surah_id: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string
+          next_review?: string
+          surah_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revision_schedule_surah_id_fkey"
+            columns: ["surah_id"]
+            isOneToOne: false
+            referencedRelation: "surahs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       salah_logs: {
         Row: {
