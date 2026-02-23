@@ -22,6 +22,33 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*supabase\.co\/rest\/v1\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "supabase-api",
+              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+              networkTimeoutSeconds: 3,
+            },
+          },
+          {
+            urlPattern: /^https:\/\/cdn\.islamic\.network\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "islamic-audio",
+              expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/gh\/fawazahmed0\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "hadith-api",
+              expiration: { maxEntries: 20, maxAgeSeconds: 24 * 60 * 60 },
+            },
+          },
+        ],
       },
       manifest: {
         name: "Deen Tracker",

@@ -8,6 +8,7 @@ import {
   Clock,
   Heart,
   Settings,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,5 +39,6 @@ export const moreTabs: NavTab[] = [
   { label: "Fasting", icon: UtensilsCrossed, path: "/fasting" },
   { label: "Time Tracker", icon: Clock, path: "/time" },
   { label: "Goals", icon: Heart, path: "/character" },
+  { label: "Reports", icon: BarChart3, path: "/reports" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];

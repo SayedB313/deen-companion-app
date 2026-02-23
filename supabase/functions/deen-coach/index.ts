@@ -19,6 +19,10 @@ async function fetchUserData(supabaseClient: any) {
     { data: topics },
     { data: salahLogs },
     { data: achievements },
+    { data: dhikrLogs },
+    { data: revisionSchedule },
+    { data: goals },
+    { data: customDhikr },
   ] = await Promise.all([
     supabaseClient.from("quran_progress").select("surah_id, ayah_number, status, surahs(name_transliteration, ayah_count)").order("updated_at", { ascending: false }).limit(200),
     supabaseClient.from("fasting_log").select("date, fast_type, notes").order("date", { ascending: false }).limit(30),
@@ -31,9 +35,13 @@ async function fetchUserData(supabaseClient: any) {
     supabaseClient.from("topics").select("name, category, progress_percent"),
     supabaseClient.from("salah_logs").select("prayer, prayed, date").eq("is_sunnah", false).order("date", { ascending: false }).limit(50),
     supabaseClient.from("achievements").select("achievement_key, achieved_at").order("achieved_at", { ascending: false }),
+    supabaseClient.from("dhikr_logs").select("dhikr_type, count, target, date").order("date", { ascending: false }).limit(50),
+    supabaseClient.from("revision_schedule").select("surah_id, next_review, interval_days, surahs(name_transliteration)").order("next_review", { ascending: true }).limit(20),
+    supabaseClient.from("goals").select("area, target_value, period").eq("is_active", true),
+    supabaseClient.from("custom_dhikr").select("name, default_target"),
   ]);
 
-  return buildDataSummary({ quranProgress, fastingLogs, timeLogs, characterLogs, books, courses, milestones, dailyLogs, topics, salahLogs, achievements });
+  return buildDataSummary({ quranProgress, fastingLogs, timeLogs, characterLogs, books, courses, milestones, dailyLogs, topics, salahLogs, achievements, dhikrLogs, revisionSchedule, goals, customDhikr });
 }
 
 function buildDataSummary(data: any): string {
@@ -131,6 +139,34 @@ function buildDataSummary(data: any): string {
   // Achievements
   if (data.achievements?.length) {
     parts.push(`🏅 ACHIEVEMENTS: ${data.achievements.map((a: any) => a.achievement_key).join(", ")}`);
+  }
+
+  // Dhikr tracking
+  if (data.dhikrLogs?.length) {
+    const today = new Date().toISOString().split("T")[0];
+    const todayDhikr = data.dhikrLogs.filter((d: any) => d.date === today);
+    const completedToday = todayDhikr.filter((d: any) => d.count >= d.target).length;
+    const totalTypes = new Set(data.dhikrLogs.map((d: any) => d.dhikr_type)).size;
+    parts.push(`📿 DHIKR: ${completedToday} completed today, ${totalTypes} dhikr types tracked. Recent: ${data.dhikrLogs.slice(0, 5).map((d: any) => `${d.dhikr_type}: ${d.count}/${d.target}`).join(", ")}`);
+  } else {
+    parts.push("📿 DHIKR: No dhikr logs yet.");
+  }
+
+  // Revision schedule
+  if (data.revisionSchedule?.length) {
+    const today = new Date().toISOString().split("T")[0];
+    const due = data.revisionSchedule.filter((r: any) => r.next_review <= today);
+    parts.push(`🔄 REVISION SCHEDULE: ${data.revisionSchedule.length} surahs tracked. ${due.length} due for review today. Upcoming: ${data.revisionSchedule.slice(0, 5).map((r: any) => `${r.surahs?.name_transliteration || 'Surah ' + r.surah_id} (due ${r.next_review}, interval ${r.interval_days}d)`).join(", ")}`);
+  }
+
+  // Goals
+  if (data.goals?.length) {
+    parts.push(`🎯 ACTIVE GOALS: ${data.goals.map((g: any) => `${g.area}: ${g.target_value} per ${g.period}`).join(", ")}`);
+  }
+
+  // Custom dhikr
+  if (data.customDhikr?.length) {
+    parts.push(`✨ CUSTOM DHIKR: ${data.customDhikr.map((d: any) => `${d.name} (target: ${d.default_target})`).join(", ")}`);
   }
 
   return parts.join("\n");

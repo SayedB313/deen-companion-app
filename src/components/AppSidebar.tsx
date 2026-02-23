@@ -9,6 +9,7 @@ import {
   LogOut,
   Hand,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,6 +33,7 @@ const navItems = [
   { title: "Fasting", url: "/fasting", icon: UtensilsCrossed },
   { title: "Time Tracker", url: "/time", icon: Clock },
   { title: "Goals", url: "/character", icon: Target },
+  { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "AI Coach", url: "/coach", icon: MessageCircle },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
