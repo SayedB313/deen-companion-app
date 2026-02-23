@@ -13,6 +13,7 @@ import {
   Compass,
   Share2,
   Moon,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -44,6 +45,7 @@ export const moreTabs: NavTab[] = [
   { label: "My Growth", icon: Heart, path: "/character" },
   { label: "Qibla Compass", icon: Compass, path: "/qibla" },
   { label: "Share Progress", icon: Share2, path: "/share" },
+  { label: "Community", icon: Users, path: "/community" },
   { label: "Reports", icon: BarChart3, path: "/reports" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
