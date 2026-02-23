@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import {
-  Download, FileJson, FileText, Bell, BellOff, User, Lock, Mail,
+  Download, FileJson, FileText, User, Lock, Mail,
   Trash2, AlertTriangle, Loader2, Save,
 } from "lucide-react";
+import NotificationSettings from "@/components/NotificationSettings";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useNotifications } from "@/hooks/useNotifications";
+
 
 const tables = [
   { name: "quran_progress", label: "Quran Progress" },
@@ -35,7 +35,7 @@ const tables = [
 const Settings = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { subscribe, unsubscribe, isSubscribed } = useNotifications();
+  
 
   // Profile state
   const [displayName, setDisplayName] = useState("");
@@ -54,11 +54,8 @@ const Settings = () => {
   // Deen time goal
   const [deenGoal, setDeenGoal] = useState("7");
 
-  // Export & notifications
+  // Export
   const [exporting, setExporting] = useState(false);
-  const [notifEnabled, setNotifEnabled] = useState(
-    typeof Notification !== "undefined" && Notification.permission === "granted"
-  );
 
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -143,20 +140,6 @@ const Settings = () => {
     setPasswordLoading(false);
   };
 
-  const toggleNotifications = async () => {
-    if (isSubscribed) {
-      await unsubscribe();
-      setNotifEnabled(false);
-      toast({ title: "Notifications disabled" });
-    } else {
-      const granted = await subscribe();
-      setNotifEnabled(granted);
-      toast({
-        title: granted ? "Notifications enabled" : "Notifications blocked",
-        description: granted ? "You'll get reminders to keep your streak alive." : "Please enable notifications in your browser settings.",
-      });
-    }
-  };
 
   const exportData = async (format: "json" | "csv") => {
     if (!user) return;
@@ -311,23 +294,7 @@ const Settings = () => {
       </Card>
 
       {/* Notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Notifications & Reminders
-          </CardTitle>
-          <CardDescription>Get nudges to stay consistent</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Browser Notifications</p>
-              <p className="text-xs text-muted-foreground">Streak-at-risk reminders at 9 PM</p>
-            </div>
-            <Switch checked={notifEnabled} onCheckedChange={toggleNotifications} />
-          </div>
-        </CardContent>
-      </Card>
+      <NotificationSettings />
 
       {/* Data Export */}
       <Card>
