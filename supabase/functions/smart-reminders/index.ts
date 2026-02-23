@@ -14,6 +14,30 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY")!;
     const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY")!;
+
+    // Require service role key or valid user JWT for authentication
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.replace("Bearer ", "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (token !== serviceKey) {
+      const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const client = createClient(supabaseUrl, serviceKey);
 
     const today = new Date().toISOString().split("T")[0];
