@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square, SkipBack, SkipForward, Repeat, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Square, SkipBack, SkipForward, Repeat, Repeat1, Volume2, VolumeX } from "lucide-react";
 
 const RECITERS = [
   { id: "ar.alafasy", name: "Mishary Alafasy", bitrate: 128 },
@@ -11,8 +11,9 @@ const RECITERS = [
   { id: "ar.husary", name: "Mahmoud Khalil Al-Husary", bitrate: 128 },
   { id: "ar.minshawi", name: "Mohamed Siddiq El-Minshawi", bitrate: 128 },
   { id: "ar.abdulbasitmurattal", name: "Abdul Basit (Murattal)", bitrate: 192 },
-  { id: "ar.saaboreen", name: "Nasser Al Qatami", bitrate: 128 },
 ];
+
+type LoopMode = "off" | "one" | "continuous" | "surah-loop";
 
 interface QuranAudioPlayerProps {
   surahId: number;
@@ -22,183 +23,264 @@ interface QuranAudioPlayerProps {
   onAyahChange?: (ayah: number) => void;
 }
 
-export default function QuranAudioPlayer({ surahId, ayahCount, surahs, currentAyah, onAyahChange }: QuranAudioPlayerProps) {
+export default function QuranAudioPlayer({
+  surahId,
+  ayahCount,
+  surahs,
+  currentAyah,
+  onAyahChange,
+}: QuranAudioPlayerProps) {
   const [reciter, setReciter] = useState(RECITERS[0].id);
   const [playing, setPlaying] = useState(false);
-  const [currentAyahNum, setCurrentAyahNum] = useState(currentAyah || 1);
-  const [loopMode, setLoopMode] = useState<"none" | "ayah" | "surah">("none");
-  const [loopCount, setLoopCount] = useState(3);
-  const [currentLoop, setCurrentLoop] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [ayahNum, setAyahNum] = useState(currentAyah || 1);
+  const [loopMode, setLoopMode] = useState<LoopMode>("off");
+  const [repeatCount, setRepeatCount] = useState(3);
+  const [currentRepeat, setCurrentRepeat] = useState(0);
   const [volume, setVolume] = useState(80);
   const [muted, setMuted] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
   const [duration, setDuration] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const loopCountRef = useRef(0);
 
-  // Calculate absolute ayah number for the audio API
-  const getAbsoluteAyah = useCallback((surahNum: number, ayahNum: number) => {
+  // Use refs for values needed in the ended handler to avoid stale closures
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ayahRef = useRef(ayahNum);
+  const loopRef = useRef(loopMode);
+  const repeatRef = useRef(repeatCount);
+  const repeatIdxRef = useRef(0);
+
+  // Keep refs in sync
+  useEffect(() => { ayahRef.current = ayahNum; }, [ayahNum]);
+  useEffect(() => { loopRef.current = loopMode; }, [loopMode]);
+  useEffect(() => { repeatRef.current = repeatCount; }, [repeatCount]);
+
+  const getAbsoluteAyah = (sId: number, aNum: number) => {
     let total = 0;
     for (const s of surahs) {
-      if (s.id >= surahNum) break;
+      if (s.id >= sId) break;
       total += s.ayah_count;
     }
-    return total + ayahNum;
-  }, [surahs]);
+    return total + aNum;
+  };
 
-  const getAudioUrl = useCallback((ayahNum: number) => {
-    const absAyah = getAbsoluteAyah(surahId, ayahNum);
-    const reciterData = RECITERS.find((r) => r.id === reciter) || RECITERS[0];
-    return `https://cdn.islamic.network/quran/audio/${reciterData.bitrate}/${reciter}/${absAyah}.mp3`;
-  }, [surahId, reciter, getAbsoluteAyah]);
+  const buildUrl = (aNum: number, rec?: string) => {
+    const r = RECITERS.find((x) => x.id === (rec || reciter)) || RECITERS[0];
+    const abs = getAbsoluteAyah(surahId, aNum);
+    return `https://cdn.islamic.network/quran/audio/${r.bitrate}/${rec || reciter}/${abs}.mp3`;
+  };
 
-  const playAyah = useCallback((ayahNum: number) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.removeEventListener("ended", handleEnded);
-      audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
-    }
-
-    const audio = new Audio(getAudioUrl(ayahNum));
-    audio.volume = muted ? 0 : volume / 100;
-    audioRef.current = audio;
-    setCurrentAyahNum(ayahNum);
-    setPlaying(true);
-    setProgress(0);
-    onAyahChange?.(ayahNum);
-
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
-    audio.addEventListener("ended", handleEnded);
-    audio.play().catch(() => setPlaying(false));
-  }, [getAudioUrl, volume, muted, onAyahChange]);
-
-  const handleTimeUpdate = useCallback(() => {
-    if (audioRef.current) {
-      setProgress(audioRef.current.currentTime);
-    }
+  // Clean up audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
   }, []);
 
-  const handleEnded = useCallback(() => {
-    if (loopMode === "ayah") {
-      loopCountRef.current++;
-      if (loopCountRef.current < loopCount) {
-        setCurrentLoop(loopCountRef.current);
+  const loadAndPlay = (targetAyah: number) => {
+    // Stop existing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    const url = buildUrl(targetAyah);
+    const audio = new Audio(url);
+    audio.volume = muted ? 0 : volume / 100;
+    audioRef.current = audio;
+
+    setAyahNum(targetAyah);
+    ayahRef.current = targetAyah;
+    setPlaying(true);
+    setPaused(false);
+    setElapsed(0);
+    setDuration(0);
+    repeatIdxRef.current = 0;
+    setCurrentRepeat(0);
+    onAyahChange?.(targetAyah);
+
+    audio.addEventListener("loadedmetadata", () => {
+      setDuration(audio.duration);
+    });
+
+    audio.addEventListener("timeupdate", () => {
+      setElapsed(audio.currentTime);
+    });
+
+    audio.addEventListener("ended", handleAudioEnded);
+
+    audio.play().catch(() => {
+      setPlaying(false);
+      setPaused(false);
+    });
+  };
+
+  const handleAudioEnded = () => {
+    const mode = loopRef.current;
+    const curAyah = ayahRef.current;
+
+    if (mode === "one") {
+      // Repeat current ayah N times
+      repeatIdxRef.current++;
+      if (repeatIdxRef.current < repeatRef.current) {
+        setCurrentRepeat(repeatIdxRef.current);
         audioRef.current?.play();
         return;
       }
-      loopCountRef.current = 0;
-      setCurrentLoop(0);
-      // Move to next ayah after loops complete
-      if (currentAyahNum < ayahCount) {
-        playAyah(currentAyahNum + 1);
-        return;
+      // Done repeating — stop
+      repeatIdxRef.current = 0;
+      setCurrentRepeat(0);
+      setPlaying(false);
+      setPaused(false);
+      return;
+    }
+
+    if (mode === "continuous") {
+      // Play next ayah, stop at end of surah
+      if (curAyah < ayahCount) {
+        loadAndPlay(curAyah + 1);
+      } else {
+        setPlaying(false);
+        setPaused(false);
       }
-    }
-
-    if (loopMode === "surah" && currentAyahNum < ayahCount) {
-      playAyah(currentAyahNum + 1);
       return;
     }
 
-    if (loopMode === "surah" && currentAyahNum >= ayahCount) {
-      playAyah(1); // Loop back to first ayah
+    if (mode === "surah-loop") {
+      // Play next ayah, loop back to 1 at end
+      if (curAyah < ayahCount) {
+        loadAndPlay(curAyah + 1);
+      } else {
+        loadAndPlay(1);
+      }
       return;
     }
 
-    // Continuous play (no loop)
-    if (loopMode === "none" && currentAyahNum < ayahCount) {
-      playAyah(currentAyahNum + 1);
-      return;
-    }
-
+    // "off" — just stop after this ayah
     setPlaying(false);
-  }, [loopMode, loopCount, currentAyahNum, ayahCount, playAyah]);
+    setPaused(false);
+  };
 
-  // Re-attach ended handler when loop settings change
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.removeEventListener("ended", handleEnded);
-    audio.addEventListener("ended", handleEnded);
-    return () => audio.removeEventListener("ended", handleEnded);
-  }, [handleEnded]);
+  // ---- Controls ----
 
-  // Update volume
+  const handlePlayPause = () => {
+    if (playing && !paused) {
+      // Pause
+      audioRef.current?.pause();
+      setPaused(true);
+      return;
+    }
+    if (paused && audioRef.current) {
+      // Resume
+      audioRef.current.play();
+      setPaused(false);
+      return;
+    }
+    // Start fresh
+    loadAndPlay(ayahNum);
+  };
+
+  const handleStop = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlaying(false);
+    setPaused(false);
+    setElapsed(0);
+    repeatIdxRef.current = 0;
+    setCurrentRepeat(0);
+  };
+
+  const handlePrev = () => {
+    if (ayahNum > 1) loadAndPlay(ayahNum - 1);
+  };
+
+  const handleNext = () => {
+    if (ayahNum < ayahCount) loadAndPlay(ayahNum + 1);
+  };
+
+  /** Called from the parent when user clicks an ayah number to play it */
+  const playSpecificAyah = (num: number) => {
+    loadAndPlay(num);
+  };
+
+  // Expose playSpecificAyah by attaching to a ref the parent can call
+  // Instead, we use onAyahChange callback and accept clicks from parent via prop
+  // We'll handle this via the parent passing a selectedAyahToPlay prop
+
+  const handleSeek = (val: number[]) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = val[0];
+      setElapsed(val[0]);
+    }
+  };
+
+  // Volume sync
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = muted ? 0 : volume / 100;
     }
   }, [volume, muted]);
 
-  const togglePlay = () => {
-    if (!audioRef.current || !playing) {
-      playAyah(currentAyahNum);
-    } else if (playing) {
-      audioRef.current?.pause();
-      setPlaying(false);
+  const cycleLoop = () => {
+    const modes: LoopMode[] = ["off", "one", "continuous", "surah-loop"];
+    setLoopMode((prev) => modes[(modes.indexOf(prev) + 1) % modes.length]);
+    repeatIdxRef.current = 0;
+    setCurrentRepeat(0);
+  };
+
+  const handleReciterChange = (newReciter: string) => {
+    setReciter(newReciter);
+    if (playing) {
+      // Restart current ayah with new reciter
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      const r = RECITERS.find((x) => x.id === newReciter) || RECITERS[0];
+      const abs = getAbsoluteAyah(surahId, ayahNum);
+      const url = `https://cdn.islamic.network/quran/audio/${r.bitrate}/${newReciter}/${abs}.mp3`;
+      const audio = new Audio(url);
+      audio.volume = muted ? 0 : volume / 100;
+      audioRef.current = audio;
+      setElapsed(0);
+      setDuration(0);
+      audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+      audio.addEventListener("timeupdate", () => setElapsed(audio.currentTime));
+      audio.addEventListener("ended", handleAudioEnded);
+      audio.play().catch(() => { setPlaying(false); setPaused(false); });
     }
   };
 
-  const resume = () => {
-    audioRef.current?.play();
-    setPlaying(true);
-  };
-
-  const stop = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setPlaying(false);
-    setProgress(0);
-    loopCountRef.current = 0;
-    setCurrentLoop(0);
-  };
-
-  const prevAyah = () => {
-    if (currentAyahNum > 1) {
-      loopCountRef.current = 0;
-      setCurrentLoop(0);
-      playAyah(currentAyahNum - 1);
-    }
-  };
-
-  const nextAyah = () => {
-    if (currentAyahNum < ayahCount) {
-      loopCountRef.current = 0;
-      setCurrentLoop(0);
-      playAyah(currentAyahNum + 1);
-    }
-  };
-
-  const seekTo = (val: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = val[0];
-      setProgress(val[0]);
-    }
-  };
-
-  const cycleLoopMode = () => {
-    const modes: Array<"none" | "ayah" | "surah"> = ["none", "ayah", "surah"];
-    const idx = modes.indexOf(loopMode);
-    setLoopMode(modes[(idx + 1) % modes.length]);
-    loopCountRef.current = 0;
-    setCurrentLoop(0);
-  };
-
-  const formatTime = (s: number) => {
+  const fmt = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const loopLabel: Record<LoopMode, string> = {
+    off: "Play once — stops after current ayah",
+    one: `Repeat ayah ×${repeatCount}`,
+    continuous: "Continuous — plays through to end of surah",
+    "surah-loop": "Loop surah — restarts from ayah 1 at the end",
+  };
+
+  const loopIcon: Record<LoopMode, React.ReactNode> = {
+    off: <Repeat className="h-4 w-4" />,
+    one: <Repeat1 className="h-4 w-4" />,
+    continuous: <SkipForward className="h-4 w-4" />,
+    "surah-loop": <Repeat className="h-4 w-4" />,
+  };
+
   return (
     <div className="space-y-3 bg-muted/30 rounded-lg p-3 border">
-      {/* Reciter Select */}
+      {/* Reciter + Ayah selector */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Select value={reciter} onValueChange={(v) => { setReciter(v); if (playing) playAyah(currentAyahNum); }}>
-          <SelectTrigger className="w-[200px] h-8 text-xs">
+        <Select value={reciter} onValueChange={handleReciterChange}>
+          <SelectTrigger className="h-8 text-xs flex-1 min-w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -207,88 +289,96 @@ export default function QuranAudioPlayer({ surahId, ayahCount, surahs, currentAy
             ))}
           </SelectContent>
         </Select>
-        <Badge variant="outline" className="text-xs">
-          Ayah {currentAyahNum}/{ayahCount}
-        </Badge>
-        {loopMode === "ayah" && (
-          <Badge variant="secondary" className="text-xs">
-            Loop {currentLoop + 1}/{loopCount}
-          </Badge>
-        )}
+
+        {/* Ayah selector */}
+        <Select value={String(ayahNum)} onValueChange={(v) => loadAndPlay(Number(v))}>
+          <SelectTrigger className="w-24 h-8 text-xs">
+            <SelectValue placeholder="Ayah" />
+          </SelectTrigger>
+          <SelectContent className="max-h-60">
+            {Array.from({ length: ayahCount }, (_, i) => i + 1).map((n) => (
+              <SelectItem key={n} value={String(n)} className="text-xs">Ayah {n}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress bar */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">{formatTime(progress)}</span>
-        <Slider
-          value={[progress]}
-          max={duration || 1}
-          step={0.1}
-          onValueChange={seekTo}
-          className="flex-1"
-        />
-        <span className="text-xs text-muted-foreground w-10 tabular-nums">{formatTime(duration)}</span>
+        <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">{fmt(elapsed)}</span>
+        <Slider value={[elapsed]} max={duration || 1} step={0.1} onValueChange={handleSeek} className="flex-1" />
+        <span className="text-xs text-muted-foreground w-10 tabular-nums">{fmt(duration)}</span>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-1">
-        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={prevAyah} disabled={currentAyahNum <= 1}>
+      {/* Transport controls */}
+      <div className="flex items-center justify-center gap-1.5">
+        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handlePrev} disabled={ayahNum <= 1}>
           <SkipBack className="h-4 w-4" />
         </Button>
 
-        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={playing ? () => { audioRef.current?.pause(); setPlaying(false); } : (audioRef.current && audioRef.current.currentTime > 0 ? resume : togglePlay)}>
-          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        <Button size="icon" variant="default" className="h-9 w-9" onClick={handlePlayPause}>
+          {playing && !paused ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
         </Button>
 
-        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={stop}>
+        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleStop} disabled={!playing && !paused}>
           <Square className="h-4 w-4" />
         </Button>
 
-        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={nextAyah} disabled={currentAyahNum >= ayahCount}>
+        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleNext} disabled={ayahNum >= ayahCount}>
           <SkipForward className="h-4 w-4" />
         </Button>
 
+        <div className="w-px h-6 bg-border mx-1" />
+
         <Button
           size="icon"
-          variant={loopMode !== "none" ? "default" : "ghost"}
+          variant={loopMode !== "off" ? "secondary" : "ghost"}
           className="h-8 w-8"
-          onClick={cycleLoopMode}
-          title={`Loop: ${loopMode === "none" ? "Off" : loopMode === "ayah" ? `Ayah ×${loopCount}` : "Surah"}`}
+          onClick={cycleLoop}
+          title={loopLabel[loopMode]}
         >
-          <Repeat className="h-4 w-4" />
+          {loopIcon[loopMode]}
         </Button>
 
-        {loopMode === "ayah" && (
-          <Select value={String(loopCount)} onValueChange={(v) => setLoopCount(Number(v))}>
+        {loopMode === "one" && (
+          <Select value={String(repeatCount)} onValueChange={(v) => setRepeatCount(Number(v))}>
             <SelectTrigger className="w-16 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[2, 3, 5, 7, 10].map((n) => (
+              {[2, 3, 5, 7, 10, 20].map((n) => (
                 <SelectItem key={n} value={String(n)} className="text-xs">×{n}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
 
+        <div className="w-px h-6 bg-border mx-1" />
+
         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setMuted(!muted)}>
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </Button>
-
         <Slider
           value={[muted ? 0 : volume]}
           max={100}
           step={1}
           onValueChange={(v) => { setVolume(v[0]); setMuted(false); }}
-          className="w-20"
+          className="w-16"
         />
       </div>
 
-      <p className="text-xs text-center text-muted-foreground">
-        {loopMode === "none" && "Continuous play"}
-        {loopMode === "ayah" && `Repeating each ayah ${loopCount}× for memorization`}
-        {loopMode === "surah" && "Looping entire surah"}
-      </p>
+      {/* Status line */}
+      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <span>Ayah {ayahNum}/{ayahCount}</span>
+        <span>·</span>
+        <span>{loopLabel[loopMode]}</span>
+        {loopMode === "one" && playing && (
+          <>
+            <span>·</span>
+            <Badge variant="outline" className="text-xs py-0">{currentRepeat + 1}/{repeatCount}</Badge>
+          </>
+        )}
+      </div>
     </div>
   );
 }
