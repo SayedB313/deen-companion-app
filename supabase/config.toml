@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.smart-reminders]
 verify_jwt = false
+
+[functions.partner-nudge]
+verify_jwt = false
