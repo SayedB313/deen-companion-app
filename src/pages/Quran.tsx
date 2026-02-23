@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Play, Pause, Volume2 } from "lucide-react";
+import RevisionScheduler from "@/components/RevisionScheduler";
 
 interface Surah {
   id: number;
@@ -63,6 +64,14 @@ const Quran = () => {
   };
 
   const totalMemorised = progress.filter((p) => p.status === "memorised").length;
+
+  // Get fully memorised surah IDs for revision scheduler
+  const memorisedSurahIds = surahs
+    .filter((surah) => {
+      const memorised = progress.filter((p) => p.surah_id === surah.id && p.status === "memorised").length;
+      return memorised === surah.ayah_count && surah.ayah_count > 0;
+    })
+    .map((s) => s.id);
 
   const openSurah = (surah: Surah) => {
     setSelectedSurah(surah);
@@ -135,6 +144,9 @@ const Quran = () => {
         <p className="text-muted-foreground">{totalMemorised} / 6,236 ayahs memorised</p>
         <Progress value={(totalMemorised / 6236) * 100} className="mt-2 h-3 max-w-md" />
       </div>
+
+      {/* Revision Scheduler */}
+      <RevisionScheduler surahs={surahs} memorisedSurahIds={memorisedSurahIds} />
 
       <div className="flex flex-wrap gap-2 text-xs">
         {[

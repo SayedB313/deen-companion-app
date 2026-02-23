@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { RotateCcw, Check, Pencil, Check as CheckIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RotateCcw, Check, Pencil, Check as CheckIcon, Flame, Plus, Trash2 } from "lucide-react";
+import { useDhikrStreaks } from "@/hooks/useDhikrStreaks";
 
 const defaultDhikrs = [
   { type: "SubhanAllah", target: 33, arabic: "سبحان الله" },
@@ -18,12 +21,25 @@ const defaultDhikrs = [
 
 const today = new Date().toISOString().split("T")[0];
 
+interface CustomDhikr {
+  id: string;
+  name: string;
+  arabic: string | null;
+  default_target: number;
+}
+
 const Dhikr = () => {
   const { user } = useAuth();
+  const streaks = useDhikrStreaks();
   const [logs, setLogs] = useState<Record<string, { id?: string; count: number; target: number }>>({});
   const [customTargets, setCustomTargets] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [customDhikrs, setCustomDhikrs] = useState<CustomDhikr[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newArabic, setNewArabic] = useState("");
+  const [newTarget, setNewTarget] = useState("33");
 
   // Load saved custom targets from localStorage
   useEffect(() => {
@@ -32,6 +48,19 @@ const Dhikr = () => {
       try { setCustomTargets(JSON.parse(saved)); } catch {}
     }
   }, []);
+
+  // Load custom dhikr entries
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("custom_dhikr")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at")
+      .then(({ data }) => {
+        if (data) setCustomDhikrs(data);
+      });
+  }, [user]);
 
   const getTarget = (type: string, defaultTarget: number) => customTargets[type] ?? defaultTarget;
 
@@ -92,7 +121,6 @@ const Dhikr = () => {
     setCustomTargets(updated);
     localStorage.setItem("dhikr-targets", JSON.stringify(updated));
 
-    // Also update DB if there's an existing log for today
     const current = logs[type];
     if (current?.id) {
       await supabase.from("dhikr_logs").update({ target: val }).eq("id", current.id);
@@ -102,20 +130,66 @@ const Dhikr = () => {
     setEditing(null);
   };
 
-  const totalCompleted = defaultDhikrs.filter(d => {
+  const addCustomDhikr = async () => {
+    if (!user || !newName.trim()) return;
+    const { data } = await supabase
+      .from("custom_dhikr")
+      .insert({
+        user_id: user.id,
+        name: newName.trim(),
+        arabic: newArabic.trim() || null,
+        default_target: Math.max(1, parseInt(newTarget) || 33),
+      })
+      .select()
+      .single();
+    if (data) {
+      setCustomDhikrs((prev) => [...prev, data]);
+      setNewName("");
+      setNewArabic("");
+      setNewTarget("33");
+      setAddOpen(false);
+    }
+  };
+
+  const deleteCustomDhikr = async (id: string) => {
+    await supabase.from("custom_dhikr").delete().eq("id", id);
+    setCustomDhikrs((prev) => prev.filter((d) => d.id !== id));
+  };
+
+  // Merge default + custom into one list
+  const allDhikrs = [
+    ...defaultDhikrs.map((d) => ({ type: d.type, target: d.target, arabic: d.arabic, isCustom: false, customId: "" })),
+    ...customDhikrs.map((d) => ({ type: d.name, target: d.default_target, arabic: d.arabic ?? "", isCustom: true, customId: d.id })),
+  ];
+
+  const totalCompleted = allDhikrs.filter(d => {
     const target = getTarget(d.type, d.target);
     return (logs[d.type]?.count ?? 0) >= target;
   }).length;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Daily Dhikr</h1>
-        <p className="text-muted-foreground">{totalCompleted}/{defaultDhikrs.length} completed today</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Daily Dhikr</h1>
+          <p className="text-muted-foreground">{totalCompleted}/{allDhikrs.length} completed today</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {streaks.currentStreak > 0 && (
+            <div className="flex items-center gap-1.5 text-sm">
+              <Flame className="h-4 w-4 text-warning" />
+              <span className="font-bold">{streaks.currentStreak}</span>
+              <span className="text-muted-foreground text-xs">day streak</span>
+              {streaks.longestStreak > streaks.currentStreak && (
+                <span className="text-muted-foreground text-xs">(best: {streaks.longestStreak})</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {defaultDhikrs.map((dhikr) => {
+        {allDhikrs.map((dhikr) => {
           const target = getTarget(dhikr.type, dhikr.target);
           const current = logs[dhikr.type];
           const count = current?.count ?? 0;
@@ -128,9 +202,23 @@ const Dhikr = () => {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium">{dhikr.type}</CardTitle>
-                  {done && <Check className="h-4 w-4 text-primary" />}
+                  <div className="flex items-center gap-1">
+                    {done && <Check className="h-4 w-4 text-primary" />}
+                    {dhikr.isCustom && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteCustomDhikr(dhikr.customId)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <p className="font-arabic text-2xl text-right leading-relaxed">{dhikr.arabic}</p>
+                {dhikr.arabic && (
+                  <p className="font-arabic text-2xl text-right leading-relaxed">{dhikr.arabic}</p>
+                )}
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="text-center">
@@ -182,6 +270,53 @@ const Dhikr = () => {
             </Card>
           );
         })}
+
+        {/* Add Custom Dhikr Card */}
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <button className="rounded-lg border border-dashed border-muted-foreground/30 p-6 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-primary/5 transition-colors min-h-[200px]">
+              <Plus className="h-8 w-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Add Custom Dhikr</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Custom Dhikr / Dua</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Name / Phrase</Label>
+                <Input
+                  placeholder="e.g. Salawat upon the Prophet ﷺ"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Arabic text (optional)</Label>
+                <Input
+                  placeholder="اللهم صل على محمد"
+                  value={newArabic}
+                  onChange={(e) => setNewArabic(e.target.value)}
+                  dir="rtl"
+                  className="font-arabic text-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Daily target</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={newTarget}
+                  onChange={(e) => setNewTarget(e.target.value)}
+                />
+              </div>
+              <Button onClick={addCustomDhikr} className="w-full" disabled={!newName.trim()}>
+                Add Dhikr
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
