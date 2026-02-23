@@ -1,14 +1,14 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { BookOpen, Play, Volume2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Headphones, BookOpen } from "lucide-react";
 import RevisionScheduler from "@/components/RevisionScheduler";
-import QuranAudioPlayer from "@/components/QuranAudioPlayer";
+import QuranListeningMode from "@/components/QuranListeningMode";
+import QuranMemorizationMode from "@/components/QuranMemorizationMode";
+import { useAyahRevision } from "@/hooks/useAyahRevision";
 
 interface Surah {
   id: number;
@@ -25,12 +25,6 @@ interface AyahProgress {
   status: string;
 }
 
-const statusColors: Record<string, string> = {
-  not_started: "bg-muted",
-  in_progress: "bg-warning",
-  memorised: "bg-primary",
-  needs_review: "bg-info",
-};
 
 const Quran = () => {
   const { user } = useAuth();
@@ -38,7 +32,7 @@ const Quran = () => {
   const [progress, setProgress] = useState<AyahProgress[]>([]);
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [surahAyahs, setSurahAyahs] = useState<Record<number, string>>({});
-  const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
+  const { getAyahStatus } = useAyahRevision(selectedSurah?.id ?? null);
 
   useEffect(() => {
     const load = async () => {
@@ -155,7 +149,7 @@ const Quran = () => {
       </div>
 
       <Dialog open={!!selectedSurah} onOpenChange={() => setSelectedSurah(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-auto">
           {selectedSurah && (
             <>
               <DialogHeader>
@@ -164,33 +158,41 @@ const Quran = () => {
                   <span className="font-arabic text-xl">{selectedSurah.name_arabic}</span>
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground">
-                  {selectedSurah.ayah_count} ayahs — Click to cycle status
+                  {selectedSurah.ayah_count} ayahs
                 </p>
               </DialogHeader>
 
-              {/* Full Audio Player */}
-              <QuranAudioPlayer
-                surahId={selectedSurah.id}
-                ayahCount={selectedSurah.ayah_count}
-                surahs={surahs}
-                currentAyah={1}
-                onAyahChange={setHighlightedAyah}
-              />
+              <Tabs defaultValue="listening" className="mt-2">
+                <TabsList className="w-full">
+                  <TabsTrigger value="listening" className="flex-1 gap-1.5">
+                    <Headphones className="h-3.5 w-3.5" /> Listening
+                  </TabsTrigger>
+                  <TabsTrigger value="memorization" className="flex-1 gap-1.5">
+                    <BookOpen className="h-3.5 w-3.5" /> Memorization
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="flex flex-wrap gap-1.5 mt-4">
-                {Array.from({ length: selectedSurah.ayah_count }, (_, i) => i + 1).map((num) => (
-                  <div key={num} className="relative">
-                    <button
-                      onClick={() => cycleAyahStatus(num)}
-                      className={`h-8 w-8 rounded text-xs font-medium transition-colors ${statusColors[surahAyahs[num] ?? "not_started"]} ${
-                        surahAyahs[num] === "memorised" ? "text-primary-foreground" : surahAyahs[num] === "in_progress" ? "text-warning-foreground" : surahAyahs[num] === "needs_review" ? "text-info-foreground" : "text-foreground"
-                      } ${highlightedAyah === num ? "ring-2 ring-primary ring-offset-1" : ""}`}
-                    >
-                      {num}
-                    </button>
-                  </div>
-                ))}
-              </div>
+                <TabsContent value="listening">
+                  <QuranListeningMode
+                    surahId={selectedSurah.id}
+                    ayahCount={selectedSurah.ayah_count}
+                    surahs={surahs}
+                    surahAyahs={surahAyahs}
+                    onCycleStatus={cycleAyahStatus}
+                    revisionStatus={getAyahStatus}
+                  />
+                </TabsContent>
+
+                <TabsContent value="memorization">
+                  <QuranMemorizationMode
+                    surahId={selectedSurah.id}
+                    ayahCount={selectedSurah.ayah_count}
+                    surahs={surahs}
+                    surahAyahs={surahAyahs}
+                    onCycleStatus={cycleAyahStatus}
+                  />
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </DialogContent>
