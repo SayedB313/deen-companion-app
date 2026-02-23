@@ -125,7 +125,7 @@ const Quran = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-bold">Qur'an</h1>
         <p className="text-muted-foreground">{totalMemorised} / 6,236 ayahs memorised</p>
@@ -145,7 +145,7 @@ const Quran = () => {
             className="pl-9 h-9"
           />
         </div>
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="flex gap-1 overflow-x-auto max-w-full">
           <button
             onClick={() => setJuzFilter(null)}
             className={`text-xs px-2.5 py-1 rounded-full shrink-0 transition-colors ${
@@ -182,7 +182,7 @@ const Quran = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 overflow-hidden">
         {filteredSurahs.map((surah) => {
           const status = getSurahStatus(surah);
           const pct = getSurahPercent(surah);
