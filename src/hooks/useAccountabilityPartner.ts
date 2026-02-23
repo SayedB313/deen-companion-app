@@ -10,6 +10,9 @@ interface Partnership {
   partner_id: string | null;
   invite_code: string;
   status: string;
+  user_wins: number;
+  partner_wins: number;
+  ties: number;
 }
 
 interface WeeklySnapshot {

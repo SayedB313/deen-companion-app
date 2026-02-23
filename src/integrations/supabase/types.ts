@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      accountability_circles: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          invite_code: string
+          max_members: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          invite_code: string
+          max_members?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          invite_code?: string
+          max_members?: number
+          name?: string
+        }
+        Relationships: []
+      }
       accountability_partners: {
         Row: {
           created_at: string
@@ -21,8 +48,11 @@ export type Database = {
           invite_code: string
           message: string | null
           partner_id: string | null
+          partner_wins: number
           status: string
+          ties: number
           user_id: string
+          user_wins: number
         }
         Insert: {
           created_at?: string
@@ -30,8 +60,11 @@ export type Database = {
           invite_code: string
           message?: string | null
           partner_id?: string | null
+          partner_wins?: number
           status?: string
+          ties?: number
           user_id: string
+          user_wins?: number
         }
         Update: {
           created_at?: string
@@ -39,8 +72,11 @@ export type Database = {
           invite_code?: string
           message?: string | null
           partner_id?: string | null
+          partner_wins?: number
           status?: string
+          ties?: number
           user_id?: string
+          user_wins?: number
         }
         Relationships: []
       }
@@ -193,6 +229,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      circle_members: {
+        Row: {
+          circle_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_members_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_circles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       courses: {
         Row: {
@@ -493,6 +561,48 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_messages: {
+        Row: {
+          circle_id: string | null
+          content: string
+          created_at: string
+          id: string
+          partnership_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          circle_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          partnership_id?: string | null
+          sender_id: string
+        }
+        Update: {
+          circle_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          partnership_id?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_messages_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_messages_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_profiles: {
         Row: {
           bio: string | null
@@ -526,6 +636,33 @@ export type Database = {
           is_discoverable?: boolean
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      partner_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          receiver_id: string
+          sender_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_id: string
+          sender_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          receiver_id?: string
+          sender_id?: string
+          status?: string
         }
         Relationships: []
       }

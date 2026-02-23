@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Users, Copy, UserPlus, Loader2 } from "lucide-react";
+import { Users, Copy, UserPlus, Loader2, Trophy } from "lucide-react";
 import { useAccountabilityPartner } from "@/hooks/useAccountabilityPartner";
 import { useToast } from "@/hooks/use-toast";
+import PartnerChat from "./PartnerChat";
 
 const CATEGORIES = [
   { key: "prayers_logged", label: "Prayers", max: 35 },
@@ -20,6 +21,7 @@ export default function PartnerCard() {
   const {
     isActive, isPending, loading, inviteCode,
     partnerName, mySnapshot, partnerSnapshot,
+    partnership,
     createInvite, acceptInvite,
   } = useAccountabilityPartner();
   const { toast } = useToast();
@@ -30,7 +32,11 @@ export default function PartnerCard() {
   if (loading) return null;
 
   // Active partnership — show comparison
-  if (isActive) {
+  if (isActive && partnership) {
+    const userWins = partnership.user_wins || 0;
+    const partnerWins = partnership.partner_wins || 0;
+    const ties = partnership.ties || 0;
+
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -41,6 +47,18 @@ export default function PartnerCard() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Win/Loss Record */}
+          {(userWins > 0 || partnerWins > 0 || ties > 0) && (
+            <div className="flex items-center justify-center gap-4 text-xs py-1.5 bg-muted/50 rounded-md">
+              <Trophy className="h-3.5 w-3.5 text-primary" />
+              <span className="font-medium text-primary">{userWins}W</span>
+              <span className="text-muted-foreground">–</span>
+              <span className="font-medium">{partnerWins}L</span>
+              <span className="text-muted-foreground">–</span>
+              <span className="text-muted-foreground">{ties}T</span>
+            </div>
+          )}
+
           {CATEGORIES.map(({ key, label, max }) => {
             const mine = mySnapshot[key];
             const theirs = partnerSnapshot[key];
@@ -64,9 +82,13 @@ export default function PartnerCard() {
               </div>
             );
           })}
-          <p className="text-[10px] text-muted-foreground text-center mt-1">
-            Your progress (left) vs {partnerName}'s (right)
-          </p>
+
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-muted-foreground">
+              Your progress (left) vs {partnerName}'s (right)
+            </p>
+            <PartnerChat partnershipId={partnership.id} partnerName={partnerName || undefined} />
+          </div>
         </CardContent>
       </Card>
     );
