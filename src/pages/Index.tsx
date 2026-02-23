@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, UtensilsCrossed, Clock, Flame, Trophy, TrendingUp, AlertTriangle, Award } from "lucide-react";
+import TodayHub from "@/components/TodayHub";
 import PrayerTimes from "@/components/PrayerTimes";
 import DashboardCharts from "@/components/DashboardCharts";
 import WeeklyInsights from "@/components/WeeklyInsights";
@@ -84,6 +85,9 @@ const Dashboard = () => {
 
       {/* Daily Inspiration */}
       <InspirationCard text={inspiration.text} source={inspiration.source} loading={inspirationLoading} />
+
+      {/* Unified Today Hub */}
+      <TodayHub />
 
       {/* Prayer Times + Salah Tracker */}
       <PrayerTimes />
