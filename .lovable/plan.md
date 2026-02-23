@@ -1,134 +1,111 @@
 
 
-# Quran Overhaul: Dual-Mode Player + Spaced Repetition
+# Feature Plan: AI Ayah Explainer + Community Accountability
 
-## Overview
+## Feature 1: "Explain this Ayah" Button (Small)
 
-Redesign the Quran surah dialog with two distinct modes -- **Listening Mode** and **Memorization Mode** -- plus properly wire the SM-2 spaced repetition algorithm into the revision flow.
+### What it does
+Adds a small button on each ayah card in Memorization Mode that sends the ayah text to the existing Deen Coach edge function, requesting tafsir (explanation), practical application, and related hadith. The response appears inline in an expandable section below the ayah card.
 
----
+### Implementation
 
-## 1. Dual-Mode Tabs in Surah Dialog
+**Modified file: `src/components/QuranMemorizationMode.tsx`**
+- Add an "Explain" button (using the `BookOpen` or `Sparkles` icon) next to each ayah's play button
+- When clicked, call the existing `deen-coach` edge function with a pre-built prompt: "Explain Surah {name}, Ayah {number}: '{arabic text}'. Provide brief tafsir, practical lesson, and any related hadith."
+- Store the explanation in local state (`Map<number, string>`) so it persists while the dialog is open
+- Render the AI response in a collapsible section below the ayah card using `ReactMarkdown`, with a loading spinner while streaming
+- Uses the same streaming pattern as `useCoach` but as a one-shot call (no conversation history needed)
 
-When a user opens a surah, they see a tab switcher at the top: **Listening** | **Memorization**
+**New hook: `src/hooks/useAyahExplainer.ts`**
+- Lightweight hook that takes surah name + ayah number + arabic text
+- Calls the `deen-coach` edge function with a focused system-like prompt embedded in the user message
+- Streams the response and returns `{ explanation, loading, explain() }`
+- No database persistence needed -- explanations are ephemeral per session
 
-### Listening Mode (clean, distraction-free)
-- **No ayah dropdown selector** -- instead, clicking any ayah number button starts playback from that ayah
-- Simplified transport: Play/Pause, Stop, Previous, Next ayah
-- Auto-play toggle (continuous / surah loop / off)
-- Reciter selector
-- Volume control + seek bar
-- The ayah grid highlights the currently playing ayah with a ring indicator
-- Clicking an ayah number = start playing that ayah (not cycle status)
-- Long-press or a small icon on each ayah to cycle memorization status
-
-### Memorization Mode (study tools)
-- **Playback speed control** (0.5x, 0.75x, 1x, 1.25x) -- slows down the reciter for easier following
-- **Repeat ayah N times** (2, 3, 5, 7, 10, 20) for drilling
-- **Arabic text display** -- fetched from `api.alquran.cloud/v1/surah/{id}/quran-uthmani` showing full Arabic verse text
-- **Transliteration display** -- fetched from `api.alquran.cloud/v1/surah/{id}/en.transliteration`
-- Each ayah shown as a card with: Arabic text (large), transliteration below, and a play button + status toggle
-- Scroll-to and highlight the currently playing ayah
-- Auto-advance toggle to move to next ayah after repeats complete
-- Reciter selector + volume
+**No database changes required.** Reuses the existing `deen-coach` edge function as-is.
 
 ---
 
-## 2. SM-2 Spaced Repetition Enhancement
+## Feature 2: Community Accountability -- Partner Streaks & Weekly Comparison (Medium)
 
-The `RevisionScheduler` already has a basic SM-2 function. Enhancements:
+### What it does
+Users can link with an accountability partner via a simple invite code system. Once paired, both users can see each other's streaks and a weekly comparison card on the dashboard showing side-by-side progress.
 
-- **Ayah-level granularity**: Track SM-2 per-ayah (not just per-surah) using a new `revision_schedule` approach -- add columns or a new table for ayah-level intervals
-- **Review inside Memorization Mode**: After listening to a repeated ayah, prompt "How well did you recall?" with Hard (quality=2) / Good (quality=4) / Easy (quality=5) buttons
-- **Auto-queue next due ayah**: In memorization mode, a "Next Due" button jumps to the next ayah due for review within the current surah
-- **Visual indicators**: Ayah buttons in both modes show color-coded borders for SM-2 urgency (overdue = red ring, due today = amber, safe = green)
+### Database Changes (2 new tables)
 
-### Database Changes
-- Add a new table `ayah_revision_schedule` with columns:
-  - `id`, `user_id`, `surah_id`, `ayah_number`, `last_reviewed` (date), `next_review` (date), `interval_days` (int), `ease_factor` (numeric), `created_at`
-  - Unique constraint on `(user_id, surah_id, ayah_number)`
-  - RLS: users manage own rows
-- Keep the existing surah-level `revision_schedule` as a summary/overview
+**Table: `accountability_partners`**
+- `id` (uuid, PK)
+- `user_id` (uuid, not null) -- the user who created the link
+- `partner_id` (uuid, nullable) -- filled when partner accepts
+- `invite_code` (text, unique, not null) -- 6-character code
+- `status` (text, default 'pending') -- 'pending' | 'active' | 'dissolved'
+- `created_at` (timestamptz, default now())
+- RLS: users can read/update rows where `user_id = auth.uid() OR partner_id = auth.uid()`
 
----
+**Table: `weekly_snapshots`**
+- `id` (uuid, PK)
+- `user_id` (uuid, not null)
+- `week_start` (date, not null)
+- `prayers_logged` (int, default 0)
+- `quran_ayahs_reviewed` (int, default 0)
+- `dhikr_completed` (int, default 0)
+- `fasting_days` (int, default 0)
+- `streak_days` (int, default 0)
+- `deen_minutes` (int, default 0)
+- `created_at` (timestamptz, default now())
+- UNIQUE(user_id, week_start)
+- RLS: users can read own rows AND rows of their active partner
 
-## 3. File Changes
+The weekly snapshot RLS policy will use a subquery:
+```
+auth.uid() = user_id 
+OR user_id IN (
+  SELECT partner_id FROM accountability_partners WHERE user_id = auth.uid() AND status = 'active'
+  UNION
+  SELECT user_id FROM accountability_partners WHERE partner_id = auth.uid() AND status = 'active'
+)
+```
 
 ### New Files
-- **`src/components/QuranListeningMode.tsx`** -- Listening mode UI: simplified player + clickable ayah grid
-- **`src/components/QuranMemorizationMode.tsx`** -- Memorization mode UI: Arabic/transliteration text, speed control, repeat, SM-2 review buttons
-- **`src/hooks/useQuranText.ts`** -- Hook to fetch and cache Arabic text + transliteration from alquran.cloud API
-- **`src/hooks/useAyahRevision.ts`** -- Hook for ayah-level SM-2: load schedule, review ayah, get next due
+
+**`src/hooks/useAccountabilityPartner.ts`**
+- Generate invite code, accept invite code, dissolve partnership
+- Fetch partner's display name and weekly snapshot
+- Compute current week's snapshot for the logged-in user on the fly (query salah_logs, quran_progress, dhikr_logs, fasting_log, daily_logs, time_logs for the current week)
+
+**`src/components/PartnerCard.tsx`**
+- Dashboard widget showing:
+  - Partner name + their current streak vs your streak
+  - Side-by-side weekly comparison bars (prayers, Quran, dhikr, fasting, deen time)
+  - "No partner yet" state with "Generate Invite Code" and "Enter Code" buttons
+  - Color indicators: green when you're ahead, amber when tied, red when behind (friendly motivation)
+
+**`src/components/PartnerSettings.tsx`**
+- Settings section for managing partnership: view partner name, copy invite code, dissolve partnership
+- Added to Settings page
 
 ### Modified Files
-- **`src/pages/Quran.tsx`** -- Replace the single dialog body with a Tabs component switching between Listening and Memorization modes
-- **`src/components/QuranAudioPlayer.tsx`** -- Refactor to accept a `mode` prop; add `playbackRate` support (`audio.playbackRate`); remove the ayah dropdown in listening mode; expose `playAyah(n)` via a ref or callback
-- **`src/components/RevisionScheduler.tsx`** -- Link "Review" action to open the surah in Memorization mode; show ayah-level stats
 
-### Database Migration
-- Create `ayah_revision_schedule` table with RLS policies
+**`src/pages/Index.tsx`** -- Add `<PartnerCard />` widget to the dashboard (after streak cards)
 
----
+**`src/pages/Settings.tsx`** -- Add `<PartnerSettings />` section
 
-## 4. Technical Details
-
-### Playback Speed
-The HTML5 Audio API natively supports `audio.playbackRate`. Values: 0.5, 0.75, 1.0, 1.25. Applied via a slider or button group in memorization mode.
-
-### Quran Text API
-```text
-Arabic:          GET https://api.alquran.cloud/v1/surah/{id}/quran-uthmani
-Transliteration: GET https://api.alquran.cloud/v1/surah/{id}/en.transliteration
-```
-Response shape: `{ data: { ayahs: [{ number, text, numberInSurah }] } }`
-
-Cached in React state per surah to avoid re-fetching. The hook will store results in a `Map<number, { arabic: string, transliteration: string }[]>`.
-
-### SM-2 Algorithm (already exists in RevisionScheduler)
-```text
-quality: 0-5 (user self-rating)
-EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
-EF' = max(1.3, EF')
-interval: q < 3 -> 1 day, first review -> 1, second -> 6, then interval * EF
-```
-Applied at ayah level in memorization mode after each repeat drill.
-
-### Ayah-Level Revision Table Schema
-```text
-ayah_revision_schedule
-  id: uuid (PK, default gen_random_uuid())
-  user_id: uuid (FK, not null)
-  surah_id: integer (not null)
-  ayah_number: integer (not null)
-  last_reviewed: date (default CURRENT_DATE)
-  next_review: date (default CURRENT_DATE)
-  interval_days: integer (default 1)
-  ease_factor: numeric (default 2.5)
-  created_at: timestamptz (default now())
-  UNIQUE(user_id, surah_id, ayah_number)
-  RLS: auth.uid() = user_id
-```
+### Snapshot Strategy
+- Weekly snapshots are computed client-side when the PartnerCard mounts (for the current week)
+- The snapshot is upserted to `weekly_snapshots` so the partner can read it
+- This avoids needing a cron job -- each user's app keeps their snapshot fresh
 
 ---
 
-## 5. User Flow Summary
+## Summary of All Changes
 
-```text
-Open Surah Dialog
-  |
-  +-- [Listening Tab]
-  |     Click ayah number -> plays that ayah
-  |     Transport: play/pause/stop/prev/next
-  |     Auto-play toggle for continuous listening
-  |     No dropdown clutter
-  |
-  +-- [Memorization Tab]
-        Shows Arabic text + transliteration per ayah
-        Speed: 0.5x / 0.75x / 1x / 1.25x
-        Repeat ayah x times for drilling
-        After drill -> "How was your recall?" -> Hard/Good/Easy
-        SM-2 schedules next review date per ayah
-        "Next Due" button jumps to next overdue ayah
-        Color rings on ayah cards show review urgency
-```
+| Area | Files | Type |
+|------|-------|------|
+| Ayah Explainer | `useAyahExplainer.ts` | New hook |
+| Ayah Explainer | `QuranMemorizationMode.tsx` | Modified |
+| Accountability DB | Migration SQL | New migration |
+| Accountability | `useAccountabilityPartner.ts` | New hook |
+| Accountability | `PartnerCard.tsx` | New component |
+| Accountability | `PartnerSettings.tsx` | New component |
+| Accountability | `Index.tsx`, `Settings.tsx` | Modified |
 
