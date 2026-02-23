@@ -1,0 +1,32 @@
+{
+  "nav": {
+    "home": "Ana Sayfa",
+    "quran": "Kur'an",
+    "dhikr": "Zikir",
+    "duas": "Dualar & Ezkâr",
+    "knowledge": "Bilgi",
+    "fasting": "Oruç & Ramazan",
+    "time": "Zaman Takibi",
+    "character": "Gelişimim",
+    "community": "Topluluk",
+    "qibla": "Kıble Pusulası",
+    "share": "İlerlemeyi Paylaş",
+    "reports": "Raporlar",
+    "coach": "Yapay Zeka Koçu",
+    "settings": "Ayarlar",
+    "track": "Takip",
+    "tools": "Araçlar",
+    "signOut": "Çıkış Yap"
+  },
+  "app": {
+    "name": "Deen Tracker"
+  },
+  "common": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "comingSoon": "Yakında",
+    "loading": "Yükleniyor…",
+    "error": "Hata",
+    "success": "Başarılı"
+  }
+}

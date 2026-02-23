@@ -1,0 +1,32 @@
+{
+  "nav": {
+    "home": "Tableau de bord",
+    "quran": "Coran",
+    "dhikr": "Dhikr",
+    "duas": "Duas & Adhkar",
+    "knowledge": "Savoir",
+    "fasting": "Jeûne & Ramadan",
+    "time": "Suivi du temps",
+    "character": "Ma Croissance",
+    "community": "Communauté",
+    "qibla": "Boussole Qibla",
+    "share": "Partager le progrès",
+    "reports": "Rapports",
+    "coach": "Coach IA",
+    "settings": "Paramètres",
+    "track": "Suivi",
+    "tools": "Outils",
+    "signOut": "Déconnexion"
+  },
+  "app": {
+    "name": "Deen Tracker"
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "comingSoon": "Bientôt disponible",
+    "loading": "Chargement…",
+    "error": "Erreur",
+    "success": "Succès"
+  }
+}

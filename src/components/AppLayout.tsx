@@ -6,9 +6,11 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { CoachPanel } from "@/components/CoachPanel";
 import { useIsMobile } from "@/hooks/use-mobile";
 import OfflineBanner from "@/components/OfflineBanner";
+import { useTranslation } from "react-i18next";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
 
   return (
     <SidebarProvider>
@@ -19,7 +21,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <header className="h-12 md:h-14 flex items-center justify-between border-b px-3 md:px-4 bg-background">
             <div className="flex items-center gap-2">
               {!isMobile && <SidebarTrigger />}
-              {isMobile && <span className="text-sm font-semibold text-foreground">Deen Tracker</span>}
+              {isMobile && <span className="text-sm font-semibold text-foreground">{t('app.name')}</span>}
             </div>
             <div className="flex items-center gap-1">
               {!isMobile && <CoachPanel />}

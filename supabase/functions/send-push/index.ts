@@ -207,7 +207,22 @@ serve(async (req) => {
       });
     }
 
-    const { title, body: notifBody } = await req.json();
+    const rawBody = await req.json();
+
+    // Validate input
+    const { z } = await import("https://deno.land/x/zod@v3.23.8/mod.ts");
+    const inputSchema = z.object({
+      title: z.string().min(1).max(200),
+      body: z.string().min(1).max(1000),
+    });
+    const parsed = inputSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: "Invalid input", details: parsed.error.flatten() }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { title, body: notifBody } = parsed.data;
 
     // Fetch user's push subscriptions using service role
     const adminClient = createClient(supabaseUrl, serviceKey);

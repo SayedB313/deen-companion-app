@@ -199,7 +199,25 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, pageContext } = await req.json();
+    const rawBody = await req.json();
+
+    // Validate input
+    const { z } = await import("https://deno.land/x/zod@v3.23.8/mod.ts");
+    const inputSchema = z.object({
+      messages: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().max(10000),
+      })).min(1).max(100),
+      pageContext: z.string().max(200).optional(),
+    });
+    const parsed = inputSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: "Invalid input", details: parsed.error.flatten() }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { messages, pageContext } = parsed.data;
     const GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     if (!GEMINI_API_KEY) throw new Error("GOOGLE_GEMINI_API_KEY is not configured");
 
