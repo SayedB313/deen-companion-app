@@ -328,16 +328,38 @@ export default function QuranAudioPlayer({
           <SkipForward className="h-4 w-4" />
         </Button>
 
-        <div className="w-px h-6 bg-border mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
+        {/* Auto-play next toggle */}
+        <Button
+          size="sm"
+          variant={loopMode === "continuous" || loopMode === "surah-loop" ? "secondary" : "outline"}
+          className="h-8 text-xs px-2 gap-1"
+          onClick={() => {
+            if (loopMode === "continuous") setLoopMode("surah-loop");
+            else if (loopMode === "surah-loop") setLoopMode("off");
+            else setLoopMode("continuous");
+          }}
+          title={loopMode === "continuous" ? "Auto-play to end of surah" : loopMode === "surah-loop" ? "Loop entire surah" : "Auto-play off"}
+        >
+          <SkipForward className="h-3.5 w-3.5" />
+          {loopMode === "continuous" ? "Auto" : loopMode === "surah-loop" ? "Loop" : "Auto"}
+        </Button>
+
+        {/* Repeat ayah toggle */}
         <Button
           size="icon"
-          variant={loopMode !== "off" ? "secondary" : "ghost"}
+          variant={loopMode === "one" ? "secondary" : "ghost"}
           className="h-8 w-8"
-          onClick={cycleLoop}
-          title={loopLabel[loopMode]}
+          onClick={() => {
+            if (loopMode === "one") setLoopMode("off");
+            else setLoopMode("one");
+            repeatIdxRef.current = 0;
+            setCurrentRepeat(0);
+          }}
+          title={loopMode === "one" ? `Repeating ayah ×${repeatCount}` : "Repeat current ayah"}
         >
-          {loopIcon[loopMode]}
+          <Repeat1 className="h-4 w-4" />
         </Button>
 
         {loopMode === "one" && (
