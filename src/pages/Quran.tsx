@@ -125,7 +125,7 @@ const Quran = () => {
   });
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
+    <div className="space-y-6 min-w-0 w-full">
       <div>
         <h1 className="text-2xl font-bold">Qur'an</h1>
         <p className="text-muted-foreground">{totalMemorised} / 6,236 ayahs memorised</p>
