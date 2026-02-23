@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           id: string
           invite_code: string
+          message: string | null
           partner_id: string | null
           status: string
           user_id: string
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           invite_code: string
+          message?: string | null
           partner_id?: string | null
           status?: string
           user_id: string
@@ -35,6 +37,7 @@ export type Database = {
           created_at?: string
           id?: string
           invite_code?: string
+          message?: string | null
           partner_id?: string | null
           status?: string
           user_id?: string
@@ -487,6 +490,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weekly_report?: boolean
+        }
+        Relationships: []
+      }
+      partner_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          current_streak: number
+          display_name: string
+          focus_areas: string[]
+          id: string
+          is_discoverable: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          current_streak?: number
+          display_name: string
+          focus_areas?: string[]
+          id?: string
+          is_discoverable?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          current_streak?: number
+          display_name?: string
+          focus_areas?: string[]
+          id?: string
+          is_discoverable?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

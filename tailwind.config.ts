@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["IBM Plex Sans", "system-ui", "sans-serif"],
+        display: ["Playfair Display", "serif"],
         arabic: ["Amiri", "serif"],
       },
       colors: {
