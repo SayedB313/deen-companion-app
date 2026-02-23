@@ -19,26 +19,50 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-192x192.png", "push-sw.js"],
+      devOptions: { enabled: false },
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,json}"],
         importScripts: ["push-sw.js"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api",
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+              expiration: { maxEntries: 100, maxAgeSeconds: 600 },
               networkTimeoutSeconds: 3,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/cdn\.islamic\.network\/quran\/audio\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "quran-audio",
+              expiration: { maxEntries: 500, maxAgeSeconds: 90 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+              rangeRequests: true,
             },
           },
           {
             urlPattern: /^https:\/\/cdn\.islamic\.network\/.*/i,
             handler: "CacheFirst",
             options: {
-              cacheName: "islamic-audio",
+              cacheName: "islamic-cdn",
               expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/api\.aladhan\.com\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "prayer-times-api",
+              expiration: { maxEntries: 30, maxAgeSeconds: 12 * 60 * 60 },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
           {
@@ -47,6 +71,16 @@ export default defineConfig(({ mode }) => ({
             options: {
               cacheName: "hadith-api",
               expiration: { maxEntries: 20, maxAgeSeconds: 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: { maxEntries: 30, maxAgeSeconds: 365 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
         ],

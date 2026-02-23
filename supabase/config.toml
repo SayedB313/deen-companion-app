@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.send-push]
 verify_jwt = false
+
+[functions.weekly-report]
+verify_jwt = false
+
+[functions.smart-reminders]
+verify_jwt = false

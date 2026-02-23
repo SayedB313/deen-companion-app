@@ -6,8 +6,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Play, Pause, Volume2 } from "lucide-react";
+import { BookOpen, Play, Volume2 } from "lucide-react";
 import RevisionScheduler from "@/components/RevisionScheduler";
+import QuranAudioPlayer from "@/components/QuranAudioPlayer";
 
 interface Surah {
   id: number;
@@ -37,6 +38,7 @@ const Quran = () => {
   const [progress, setProgress] = useState<AyahProgress[]>([]);
   const [selectedSurah, setSelectedSurah] = useState<Surah | null>(null);
   const [surahAyahs, setSurahAyahs] = useState<Record<number, string>>({});
+  const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -65,7 +67,6 @@ const Quran = () => {
 
   const totalMemorised = progress.filter((p) => p.status === "memorised").length;
 
-  // Build per-surah progress data for revision scheduler
   const surahsWithProgress = surahs.map((surah) => {
     const surahProgress = progress.filter((p) => p.surah_id === surah.id);
     return {
@@ -101,48 +102,12 @@ const Quran = () => {
       { onConflict: "user_id,surah_id,ayah_number" }
     );
 
-    // Update local progress
     setProgress((prev) => {
       const filtered = prev.filter((p) => !(p.surah_id === selectedSurah.id && p.ayah_number === ayahNum));
       return [...filtered, { surah_id: selectedSurah.id, ayah_number: ayahNum, status: next }];
     });
   };
 
-  // Audio player state
-  const [playingSurah, setPlayingSurah] = useState<number | null>(null);
-  const [playingAyah, setPlayingAyah] = useState<number | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const playAyah = (surahId: number, ayahNum: number) => {
-    const surahStr = String(surahId).padStart(3, "0");
-    const ayahStr = String(ayahNum).padStart(3, "0");
-    const url = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${surahId > 1 ? 
-      // Calculate absolute ayah number
-      Array.from({ length: surahId - 1 }, (_, i) => surahs[i]?.ayah_count ?? 0).reduce((a, b) => a + b, 0) + ayahNum 
-      : ayahNum}.mp3`;
-    
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    setPlayingSurah(surahId);
-    setPlayingAyah(ayahNum);
-    audio.play();
-    audio.onended = () => {
-      setPlayingSurah(null);
-      setPlayingAyah(null);
-    };
-  };
-
-  const stopAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    setPlayingSurah(null);
-    setPlayingAyah(null);
-  };
   return (
     <div className="space-y-6">
       <div>
@@ -151,7 +116,6 @@ const Quran = () => {
         <Progress value={(totalMemorised / 6236) * 100} className="mt-2 h-3 max-w-md" />
       </div>
 
-      {/* Revision Scheduler */}
       <RevisionScheduler surahsWithProgress={surahsWithProgress} />
 
       <div className="flex flex-wrap gap-2 text-xs">
@@ -202,37 +166,27 @@ const Quran = () => {
                 <p className="text-sm text-muted-foreground">
                   {selectedSurah.ayah_count} ayahs — Click to cycle status
                 </p>
-                <div className="flex gap-2 mt-2">
-                  <Button size="sm" variant="outline" onClick={() => playAyah(selectedSurah.id, 1)}>
-                    <Play className="h-3 w-3 mr-1" /> Play Surah
-                  </Button>
-                  {playingSurah === selectedSurah.id && (
-                    <Button size="sm" variant="outline" onClick={stopAudio}>
-                      <Pause className="h-3 w-3 mr-1" /> Stop
-                    </Button>
-                  )}
-                </div>
               </DialogHeader>
+
+              {/* Full Audio Player */}
+              <QuranAudioPlayer
+                surahId={selectedSurah.id}
+                ayahCount={selectedSurah.ayah_count}
+                surahs={surahs}
+                currentAyah={1}
+                onAyahChange={setHighlightedAyah}
+              />
+
               <div className="flex flex-wrap gap-1.5 mt-4">
                 {Array.from({ length: selectedSurah.ayah_count }, (_, i) => i + 1).map((num) => (
-                  <div key={num} className="relative group">
+                  <div key={num} className="relative">
                     <button
                       onClick={() => cycleAyahStatus(num)}
                       className={`h-8 w-8 rounded text-xs font-medium transition-colors ${statusColors[surahAyahs[num] ?? "not_started"]} ${
                         surahAyahs[num] === "memorised" ? "text-primary-foreground" : surahAyahs[num] === "in_progress" ? "text-warning-foreground" : surahAyahs[num] === "needs_review" ? "text-info-foreground" : "text-foreground"
-                      }`}
+                      } ${highlightedAyah === num ? "ring-2 ring-primary ring-offset-1" : ""}`}
                     >
                       {num}
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); playAyah(selectedSurah.id, num); }}
-                      className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                    >
-                      {playingSurah === selectedSurah.id && playingAyah === num ? (
-                        <Volume2 className="h-2.5 w-2.5" />
-                      ) : (
-                        <Play className="h-2.5 w-2.5" />
-                      )}
                     </button>
                   </div>
                 ))}

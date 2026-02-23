@@ -23,6 +23,7 @@ import Reports from "./pages/Reports";
 import Duas from "./pages/Duas";
 import Qibla from "./pages/Qibla";
 import ShareCards from "./pages/ShareCards";
+import Ramadan from "./pages/Ramadan";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="/duas" element={<ProtectedRoute><Duas /></ProtectedRoute>} />
               <Route path="/qibla" element={<ProtectedRoute><Qibla /></ProtectedRoute>} />
               <Route path="/share" element={<ProtectedRoute><ShareCards /></ProtectedRoute>} />
+              <Route path="/ramadan" element={<ProtectedRoute><Ramadan /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
