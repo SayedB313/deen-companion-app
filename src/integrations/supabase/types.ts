@@ -35,6 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ayah_revision_schedule: {
+        Row: {
+          ayah_number: number
+          created_at: string
+          ease_factor: number
+          id: string
+          interval_days: number
+          last_reviewed: string
+          next_review: string
+          surah_id: number
+          user_id: string
+        }
+        Insert: {
+          ayah_number: number
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string
+          next_review?: string
+          surah_id: number
+          user_id: string
+        }
+        Update: {
+          ayah_number?: number
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string
+          next_review?: string
+          surah_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string | null
