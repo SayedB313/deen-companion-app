@@ -382,6 +382,51 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          fasting_reminders: boolean
+          id: string
+          motivational_quotes: boolean
+          push_enabled: boolean
+          quran_revision_reminder: boolean
+          salah_reminders: boolean
+          streak_reminder: boolean
+          streak_reminder_time: string
+          updated_at: string
+          user_id: string
+          weekly_report: boolean
+        }
+        Insert: {
+          created_at?: string
+          fasting_reminders?: boolean
+          id?: string
+          motivational_quotes?: boolean
+          push_enabled?: boolean
+          quran_revision_reminder?: boolean
+          salah_reminders?: boolean
+          streak_reminder?: boolean
+          streak_reminder_time?: string
+          updated_at?: string
+          user_id: string
+          weekly_report?: boolean
+        }
+        Update: {
+          created_at?: string
+          fasting_reminders?: boolean
+          id?: string
+          motivational_quotes?: boolean
+          push_enabled?: boolean
+          quran_revision_reminder?: boolean
+          salah_reminders?: boolean
+          streak_reminder?: boolean
+          streak_reminder_time?: string
+          updated_at?: string
+          user_id?: string
+          weekly_report?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
