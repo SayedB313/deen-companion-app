@@ -1,173 +1,110 @@
 
 
-# Top 10 Massive Improvements -- Roadmap
+# Plan: Multi-Lingual (i18n) Infrastructure + Cleanup
 
-Here are the 10 highest-impact upgrades ranked by user value, covering UI/UX polish, new features, and technical improvements.
+## Housekeeping First
 
----
+1. **Delete dead file** `src/pages/Ramadan.tsx` -- the route already redirects to `/fasting`, so this file is orphaned.
 
-## 1. Dashboard Overhaul -- Smart Daily View
-
-**Problem:** The dashboard is information-dense but passive. It shows stats but doesn't guide the user on what to do next.
-
-**What changes:**
-- Replace the flat stat cards with a "Today's Checklist" hero section -- a visual progress ring showing how much of today's worship is done (salah, dhikr, Quran, fasting combined)
-- Add a "Next up" prompt card (e.g., "Asr is in 45 minutes" or "You haven't done your evening adhkar yet")
-- Collapse rarely-changing stats (books read, total fasts) into a compact "Lifetime Stats" accordion at the bottom
-- Add animated transitions when stats update (counter animations, confetti on completing all 5 prayers)
-
-**Files:** `src/pages/Index.tsx`, `src/components/TodayHub.tsx`
+2. **Fix edge function input validation** (last remaining error-level security issue) -- add Zod-based validation to `deen-coach`, `send-push`, and `push-subscribe` edge functions.
 
 ---
 
-## 2. Dhikr Counter -- Haptic, Full-Screen Tapping Mode
+## i18n Infrastructure Setup
 
-**Problem:** The dhikr page is functional but feels like a form, not a worship experience. Users want to tap a big button and feel the count go up.
+### Approach
+Use `react-i18next` with JSON translation files. Start with English as the base, then add empty translation stubs for all 7 languages so translators (or AI) can fill them in incrementally.
 
-**What changes:**
-- Add a full-screen "Focus Mode" per dhikr -- large Arabic text centered, massive circular tap target, count in bold, subtle pulse animation on each tap
-- Haptic feedback via the Vibration API on mobile (single pulse on tap, double on completion)
-- Auto-advance to next dhikr when target is reached (with a satisfying completion animation)
-- Background color shifts subtly as you approach the target
-- Keep the current list view as the "overview" and add a play/start button to enter focus mode
+### Languages
+English (default), Arabic, Spanish, French, Russian, Urdu, Turkish, Malay
 
-**Files:** `src/pages/Dhikr.tsx` (new focus mode component)
+### Steps
 
----
+**Step 1: Install dependencies**
+- `react-i18next` and `i18next` for the translation framework
+- `i18next-browser-languagedetector` for auto-detecting browser language
 
-## 3. Quran Page -- Reading Mode + Bookmark System
+**Step 2: Create translation file structure**
 
-**Problem:** The Quran page is focused on memorization tracking but has no reading/recitation experience. Users must leave the app to actually read Quran.
+```text
+src/
+  i18n/
+    index.ts          <-- i18n init config
+    locales/
+      en.json         <-- Full English strings (extracted from current UI)
+      ar.json         <-- Arabic stubs
+      es.json         <-- Spanish stubs
+      fr.json         <-- French stubs
+      ru.json         <-- Russian stubs
+      ur.json         <-- Urdu stubs
+      tr.json         <-- Turkish stubs
+      ms.json         <-- Malay stubs
+```
 
-**What changes:**
-- Add a "Reading Mode" tab alongside Listening and Memorization -- displays the Arabic text with optional translation, scrollable by surah
-- Add a bookmark/last-read position that persists per user (stored in Supabase)
-- Add a daily reading goal tracker (e.g., "Read 1 page/day") integrated with the Goals system
-- Improve the surah list with a search bar and juz-based filtering
+**Step 3: Extract English strings**
+Pull all user-facing text from the main pages and components into `en.json` with organized keys:
 
-**Files:** `src/pages/Quran.tsx`, new `src/components/QuranReadingMode.tsx`
+```text
+nav.home, nav.quran, nav.dhikr, ...
+dashboard.title, dashboard.nextUp, ...
+fasting.title, fasting.heatmap, fasting.ramadan, ...
+settings.language, settings.notifications, ...
+common.save, common.cancel, common.comingSoon, ...
+```
 
----
+**Step 4: Initialize i18n in `src/main.tsx`**
+Import and configure i18next before the React app renders.
 
-## 4. Onboarding 2.0 -- Personalized Setup Wizard
+**Step 5: Add RTL support**
+- Detect when Arabic or Urdu is active
+- Apply `dir="rtl"` to the document root
+- Add Tailwind RTL utilities where needed (e.g., `rtl:` prefix for directional spacing)
 
-**Problem:** Current onboarding collects a name and focus areas but doesn't set up the app based on choices. Users land on a dashboard with empty data and no guidance.
+**Step 6: Add language selector to Settings**
+- Replace the greyed-out "Coming Soon" multi-lingual card with a working language dropdown
+- Persist selection in `localStorage` and optionally in the user's Supabase profile
+- On change, switch the app language instantly (no reload needed)
 
-**What changes:**
-- Add a step for setting daily targets during onboarding (e.g., "How many ayahs do you want to memorize daily?") using the goal chips we built for My Growth
-- Add a "What's your experience level?" step (beginner/intermediate/advanced) to customize AI Coach tone
-- After completing onboarding, show a guided tour overlay highlighting the 4 primary tabs
-- Pre-populate suggested duas as favorites based on focus areas
-- Store experience level in profiles table for AI Coach personalization
+**Step 7: Wire up key components**
+Replace hardcoded strings with `t()` calls in these priority files:
+- `AppSidebar.tsx` and `mobileNav.ts` (navigation labels)
+- `AppLayout.tsx` (header)
+- `Settings.tsx` (settings labels)
+- `Landing.tsx` (public-facing page)
+- Other pages will use `t()` progressively
 
-**Files:** `src/pages/Onboarding.tsx`, DB: add `experience_level` column to `profiles`
-
----
-
-## 5. Prayer Times -- Notifications + Athan Integration
-
-**Problem:** Prayer times display is passive -- users see the times but get no reminders. The countdown is nice but doesn't push notifications.
-
-**What changes:**
-- Add per-prayer notification toggles (browser/push notifications 5, 10, or 15 min before each prayer)
-- Add an athan audio option that plays when prayer time arrives (selectable from a few athan recordings via free CDN audio)
-- Show the prayer method/calculation being used and let users choose (Hanafi, standard, etc.)
-- Add Jumu'ah prayer time highlight on Fridays
-- Add a "Prayed on time / Late / Missed" three-state tracker instead of just a checkbox
-
-**Files:** `src/components/PrayerTimes.tsx`, `src/hooks/useNotifications.ts`, `supabase/functions/smart-reminders/index.ts`
-
----
-
-## 6. Offline-First Architecture + Data Sync
-
-**Problem:** The app makes fresh Supabase queries on every page load. If offline (common on mobile PWA), nothing works. No caching, no optimistic updates.
-
-**What changes:**
-- Add React Query's `staleTime` and `gcTime` configuration so data persists across navigation
-- Implement `localforage` or IndexedDB caching for critical data (today's salah, dhikr counts, prayer times)
-- Add optimistic updates for dhikr taps, salah checkboxes, and character quick-logs so they feel instant
-- Show a subtle "offline" banner when connectivity is lost, with queued actions syncing when back online
-- Cache prayer times for the day so the API isn't called repeatedly
-
-**Files:** `src/App.tsx` (QueryClient config), new `src/lib/offlineCache.ts`, update hooks to use React Query properly
+### What won't change yet
+- Non-English translation content (stubs only -- actual translations added later)
+- Every single string in the app (we'll do the most visible ones first, then expand)
 
 ---
 
-## 7. Fasting Page -- Calendar Heatmap + Sunnah Day Suggestions
+## Technical Details
 
-**Problem:** The fasting page is a basic calendar with toggle buttons. No visual impact, no guidance on recommended fast days.
+### i18n Configuration (`src/i18n/index.ts`)
+```typescript
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import en from './locales/en.json';
+// ... other locale imports
 
-**What changes:**
-- Replace the plain calendar with a GitHub-style heatmap showing fasting frequency over the year (green = fasted, empty = not)
-- Add "Recommended Fasting Days" section that highlights upcoming sunnah days (Mondays, Thursdays, Ayyam al-Bid, Ashura, Arafah) based on the Hijri calendar
-- Add fasting stats: total this month, this year, streak of consecutive sunnah fasts
-- Add a "Fasting intention" toggle for tomorrow so users can set it the night before
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: { en: { translation: en }, ... },
+    fallbackLng: 'en',
+    interpolation: { escapeValue: false },
+  });
+```
 
-**Files:** `src/pages/Fasting.tsx`, new heatmap component
+### RTL Handling
+A small utility hook `useDirection()` that returns `'rtl'` or `'ltr'` based on the active language, and sets `document.documentElement.dir` accordingly.
 
----
-
-## 8. Knowledge Hub -- Reading Progress + Notes System
-
-**Problem:** The knowledge page tracks books/courses but has no reading progress tracking or note-taking. It's a list, not a learning tool.
-
-**What changes:**
-- Add page-by-page progress tracking for books (current page / total pages with a progress bar)
-- Add a notes/highlights feature per book -- save key takeaways as you read
-- Add a "Currently Learning" spotlight section at the top showing active books/courses
-- Add category-based progress visualization (e.g., "Fiqh: 3 books, Seerah: 1 book")
-- Add book recommendations based on what the user has already read
-
-**Files:** `src/pages/Knowledge.tsx`, DB: add `current_page` and `notes` to `books` table
-
----
-
-## 9. Reports & Analytics -- Downloadable PDF + Comparison View
-
-**Problem:** Reports show charts but lack actionable insights and shareability. Users can't compare periods or export their progress.
-
-**What changes:**
-- Add week-over-week comparison view (this week vs last week side by side)
-- Add a "Monthly Summary" card with key highlights (best prayer consistency week, most dhikr day, etc.)
-- Add PDF/image export of the weekly report for sharing
-- Add a "Personal Best" section showing all-time records
-- Add Quran memorization progress chart (cumulative ayahs over time)
-
-**Files:** `src/pages/Reports.tsx`, `src/components/WeeklyReportCard.tsx`
-
----
-
-## 10. Landing Page -- Social Proof + App Store Feel
-
-**Problem:** The landing page is functional but generic. It doesn't convey the depth of features or build trust for new users.
-
-**What changes:**
-- Add an animated feature showcase with phone mockup screenshots (use CSS-only device frames)
-- Add a live counter section: "X ayahs memorized, Y prayers tracked" (aggregated, anonymized stats from Supabase)
-- Add a comparison table: "Deen Tracker vs generic habit apps" highlighting Islamic-specific features
-- Add an FAQ accordion section addressing common questions
-- Improve mobile responsiveness with stacked hero section and swipeable feature cards
-- Add a "How it works" 3-step visual (Sign up, Set goals, Track daily)
-
-**Files:** `src/pages/Landing.tsx`
-
----
-
-## Priority Order
-
-| Priority | Item | Impact | Effort |
-|----------|------|--------|--------|
-| 1 | Dhikr Focus Mode | High -- daily use feature | Medium |
-| 2 | Dashboard Smart View | High -- first thing users see | Medium |
-| 3 | Offline-First + Caching | High -- PWA reliability | Medium |
-| 4 | Prayer Notifications | High -- most requested Islamic app feature | Medium |
-| 5 | Onboarding 2.0 | High -- reduces drop-off | Low |
-| 6 | Quran Reading Mode | High -- core worship feature | Medium |
-| 7 | Fasting Heatmap | Medium -- visual delight | Low |
-| 8 | Knowledge Notes | Medium -- learning depth | Low |
-| 9 | Reports Export | Medium -- shareability | Medium |
-| 10 | Landing Page Polish | Medium -- conversion | Low |
-
-I'd recommend tackling these one at a time starting from the top. Each one is a self-contained improvement that can be built and tested independently. Which one do you want to start with?
+### Estimated scope
+- ~10 new files (i18n config + 8 locale JSONs + RTL hook)
+- ~8-10 modified files (main.tsx, settings, sidebar, nav, layout, landing)
+- 1 deleted file (Ramadan.tsx)
+- 3 edge functions updated with Zod validation
 
