@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarClock, CheckCircle2, AlertTriangle, RotateCcw } from "lucide-react";
+import { CalendarClock, CheckCircle2, AlertTriangle, RotateCcw, BookOpen } from "lucide-react";
 
 interface RevisionItem {
   id: string;
@@ -50,9 +50,10 @@ interface SurahWithProgress {
 
 interface RevisionSchedulerProps {
   surahsWithProgress: SurahWithProgress[];
+  onReviewSurah?: (surahId: number) => void;
 }
 
-const RevisionScheduler = ({ surahsWithProgress }: RevisionSchedulerProps) => {
+const RevisionScheduler = ({ surahsWithProgress, onReviewSurah }: RevisionSchedulerProps) => {
   const { user } = useAuth();
   const [schedule, setSchedule] = useState<RevisionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,6 +181,16 @@ const RevisionScheduler = ({ surahsWithProgress }: RevisionSchedulerProps) => {
                   <Progress value={(item.memorised_ayahs / item.total_ayahs) * 100} className="h-1.5" />
                 )}
                 <div className="flex gap-1.5">
+                  {onReviewSurah && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 text-xs flex-1"
+                      onClick={() => onReviewSurah(item.surah_id)}
+                    >
+                      <BookOpen className="h-3 w-3 mr-1" /> Review
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
