@@ -42,6 +42,10 @@ The app is built for mobile-first usage (installable as a PWA on iOS/Android) wi
 │   ├── index.css              # Global styles, CSS variables, Tailwind config
 │   ├── components/
 │   │   ├── ui/                # shadcn/ui primitives (button, card, dialog, etc.)
+│   │   ├── knowledge/         # Knowledge tab components (redesigned)
+│   │   │   ├── knowledgeTypes.ts    # Shared types, constants, encode/parse helpers
+│   │   │   ├── ResourceCard.tsx     # Unified card for all 5 resource types
+│   │   │   └── AddResourceModal.tsx # Two-step add-resource modal
 │   │   ├── AppLayout.tsx      # Main layout — sidebar (desktop), bottom nav (mobile), header
 │   │   ├── AppSidebar.tsx     # Desktop navigation sidebar
 │   │   ├── MobileBottomNav.tsx # Mobile bottom tab bar + "More" sheet
@@ -73,7 +77,7 @@ The app is built for mobile-first usage (installable as a PWA on iOS/Android) wi
 │   │   ├── Dhikr.tsx          # Dhikr counter with focus mode
 │   │   ├── Duas.tsx           # Duas & Adhkar collection
 │   │   ├── Fasting.tsx        # Fasting tracker + heatmap + Ramadan mode
-│   │   ├── Knowledge.tsx      # Books, courses, topics, notes
+│   │   ├── Knowledge.tsx      # Learning dashboard (Library/Topics/Scholars/Notes tabs)
 │   │   ├── TimeTracker.tsx    # Deen vs dunya time tracking
 │   │   ├── Character.tsx      # Character trait tracking (good/bad habits)
 │   │   ├── Coach.tsx          # AI Deen Coach chat interface
@@ -172,11 +176,29 @@ The app is built for mobile-first usage (installable as a PWA on iOS/Android) wi
 - Arabic text + transliteration + English translation
 - Favourites system
 
-### 6. Knowledge Tracker (`/knowledge`)
-- Track Islamic books (title, author, pages read, category)
-- Track courses (name, instructor, progress percentage)
-- Topic organisation with progress tracking
-- Note-taking per course/topic
+### 6. Knowledge Tracker (`/knowledge`) — *fully redesigned*
+A unified Islamic learning dashboard supporting five content types:
+- **Books** — title, author, category, page-level progress tracking
+- **Articles / PDFs** — read/unread toggle, optional source URL saved as a linked note
+- **Online Courses** — Bayyinah, SeekersGuidance, Coursera, etc. — progress slider
+- **YouTube Series / Lectures** — channel/scholar, progress slider
+- **Podcasts / Audio** — host/series, progress slider
+
+**Four tabs:**
+- **Library** — unified grid of all resources; filter by type (All / Books / Courses / YouTube / Podcasts / Articles); sort by Recent, Progress, or A→Z; global search with in-card highlight
+- **Topics** — Islamic disciplines (Aqeedah, Fiqh, Tafsir, etc.) with editable progress slider (inline Slider component), linked resource count, notes
+- **Scholars** — auto-aggregated view grouping resources by author/instructor; initials avatar, type badges, avg progress per scholar
+- **Notes** — all notes across all resources and topics; markdown rendered via ReactMarkdown; grouped by resource; search-filtered
+
+**Architecture (`src/components/knowledge/`):**
+- `knowledgeTypes.ts` — shared types (`Resource`, `ResourceType`, `BookRow`, `CourseRow`, `TopicRow`, `NoteRow`), `CATEGORIES` constant, `encodeInstructor()` / `parseInstructor()`, `normaliseBook()` / `normaliseCourse()`
+- `ResourceCard.tsx` — unified card for all 5 resource types; type chip + colour icon; hover-reveal actions; books use page input, others use collapsible Slider; Framer Motion staggered entrance
+- `AddResourceModal.tsx` — two-step modal (step 1: pick type; step 2: type-specific fields); handles `[YT]||`, `[POD]||`, `[COURSE]||` instructor-field encoding for non-book resources
+
+**Notes linkage (no DB schema change):**
+- Book notes: `notes.title = "book:${book.id}"` (stable, ID-based — fixes old title-matching bug)
+- Course/YouTube/Podcast notes: `notes.course_id = resource.id`
+- Topic notes: `notes.topic_id = topic.id`
 
 ### 7. Time Tracker (`/time`)
 - Log daily activities with duration
@@ -237,7 +259,7 @@ The app is built for mobile-first usage (installable as a PWA on iOS/Android) wi
 | `books` | Book tracking (title, author, pages, status) |
 | `courses` | Course tracking (name, instructor, progress) |
 | `topics` | Knowledge topic organisation |
-| `notes` | Notes linked to courses or topics |
+| `notes` | Notes linked to resources — `course_id` (courses/YT/podcasts), `topic_id` (topics), or `title="book:${id}"` (books) |
 | `goals` | User goals per area with targets |
 | `achievements` | Earned achievement badges |
 | `milestones` | Custom milestone tracking |
