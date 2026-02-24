@@ -28,7 +28,7 @@ The app is built for mobile-first usage (installable as a PWA on iOS/Android) wi
 | **Theming** | next-themes (dark/light mode, default dark) |
 | **Forms** | React Hook Form + Zod validation |
 | **Toasts** | Sonner + shadcn toast |
-| **Platform** | Lovable (development, hosting, deployment) |
+| **Platform** | Vercel (hosting, deployment) |
 
 ---
 
@@ -387,4 +387,21 @@ npm run test   # Run Vitest tests
 ### Environment Variables
 - `VITE_SUPABASE_URL` — Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` — Supabase anonymous/publishable key
-- Edge function secrets managed via Supabase dashboard / Lovable Cloud
+- Edge function secrets managed via Supabase dashboard
+
+---
+
+## Deployment & Repository
+
+| | |
+|---|---|
+| **Production URL** | https://deen-companion-app.vercel.app |
+| **GitHub Repo** | https://github.com/SayedB313/deen-companion-app |
+| **Vercel Project** | https://vercel.com/sbw919-gmailcoms-projects/deen-companion-app |
+| **Hosting** | Vercel (auto-deploys on every push to `main`) |
+
+### Deploy
+```bash
+git push origin main        # triggers auto-deploy on Vercel
+vercel --prod               # manual production deploy via CLI
+```
